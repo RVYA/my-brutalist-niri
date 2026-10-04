@@ -190,59 +190,75 @@ window.modal-window-root {
   padding: 8px 4px 2px 4px;
 }
 
-.brutal-nav-btn {
+.brutalist-btn {
+  background: transparent;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  padding: 8px 4px;
+  color: @color-inverse;
+  transition: color 0.15s ease;
+}
+
+.brutalist-btn-label {
   font-family: var(--font-mono);
-  background-color: alpha(@color-neutral, 0.08);
-  border: 1px solid alpha(@color-neutral, 0.25);
-  border-radius: 8px;
-  padding: 12px 14px;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.brutal-nav-btn:hover {
-  background-color: alpha(@color-neutral, 0.18);
-  border-color: @color-accent;
-}
-
-.brutal-nav-btn.active {
-  background-color: alpha(@color-accent, 0.15);
-  border-color: @color-accent;
-}
-
-.brutal-nav-num {
-  font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
-  color: @color-neutral;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: @color-inverse;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 3px;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
-.brutal-nav-title {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
+.brutalist-btn-arrow-box {
+  color: @color-neutral;
+  transition: color 0.15s ease;
+}
+
+.brutalist-btn-head {
+  color: inherit;
+  transition: color 0.15s ease;
+}
+
+.brutalist-btn-tail {
+  min-height: 2px;
+  background-color: @color-neutral;
+  transition: background-color 0.15s ease;
+}
+
+.brutalist-btn.active .brutalist-btn-arrow-box,
+.brutalist-btn.active .brutalist-btn-head {
   color: @color-inverse;
 }
 
-.brutal-nav-btn:hover .brutal-nav-title,
-.brutal-nav-btn.active .brutal-nav-title {
+.brutalist-btn.active .brutalist-btn-tail {
+  background-color: @color-inverse;
+}
+
+.brutalist-btn.active .brutalist-btn-label {
+  color: @color-inverse;
+  border-bottom-color: @color-inverse;
+}
+
+.brutalist-btn:hover .brutalist-btn-arrow-box,
+.brutalist-btn:hover .brutalist-btn-head,
+.brutalist-btn.active:hover .brutalist-btn-arrow-box,
+.brutalist-btn.active:hover .brutalist-btn-head {
   color: @color-accent;
 }
 
-.brutal-nav-arrow {
-  font-family: var(--font-mono);
-  font-size: 20px;
-  font-weight: 800;
-  line-height: 1;
-  color: @color-neutral;
-  transition: color 0.15s ease, transform 0.15s ease;
+.brutalist-btn:hover .brutalist-btn-label,
+.brutalist-btn.active:hover .brutalist-btn-label {
+  color: @color-accent;
+  border-bottom-color: @color-accent;
 }
 
-.brutal-nav-btn:hover .brutal-nav-arrow,
-.brutal-nav-btn.active .brutal-nav-arrow {
-  color: @color-accent;
-  transform: translateX(3px);
+.brutalist-btn:hover .brutalist-btn-tail,
+.brutalist-btn.active:hover .brutalist-btn-tail {
+  background-color: @color-accent;
 }
 
 .theme-nav-swatches {
@@ -489,7 +505,6 @@ window.modal-window-root {
 
 .modal-header {
   padding-bottom: 10px;
-  border-bottom: 1px solid alpha(@color-neutral, 0.25);
 }
 
 .modal-title {

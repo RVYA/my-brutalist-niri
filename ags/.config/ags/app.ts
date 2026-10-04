@@ -1,4 +1,5 @@
 import app from "ags/gtk4/app"
+import { Gtk, Gdk } from "ags/gtk4"
 import GLib from "gi://GLib"
 import Gio from "gi://Gio"
 import TopBar from "./widget/TopBar"
@@ -47,6 +48,12 @@ function initWallpaper() {
 
 app.start({
   main() {
+    const display = Gdk.Display.get_default()
+    if (display) {
+      const iconTheme = Gtk.IconTheme.get_for_display(display)
+      iconTheme.add_search_path(`${GLib.getenv("HOME")}/.config/ags/assets/icons`)
+      iconTheme.add_search_path(`${GLib.getenv("HOME")}/dotfiles/ags/.config/ags/assets/icons`)
+    }
     reloadCss()
     initWallpaper()
     app.get_monitors().map((monitor) => {
