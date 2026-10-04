@@ -1,0 +1,37 @@
+:root {
+  --font-sans: "Manrope", sans-serif;
+  --font-mono: "Space Mono", monospace;
+  --font-size-sans: 13px;
+  --font-size-mono: 13px;
+  --font-weight-sans: 400;
+  --font-weight-mono: 400;
+  --font-style-sans: normal;
+  --font-style-mono: normal;
+  --font-variation-sans: 'wght' 400;
+  --font-variation-mono: normal;
+}
+
+* {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sans);
+  font-weight: var(--font-weight-sans);
+  font-style: var(--font-style-sans);
+  font-variation-settings: var(--font-variation-sans);
+}
+
+.topbar-pill,
+.modal-title,
+.brutalist-btn,
+.radio-btn,
+.section-title,
+.slider-hint,
+.clock-time,
+.accent-slider-val,
+.slider-val,
+.theme-nav-item,
+.category-section-title {
+  font-family: var(--font-mono);
+  font-weight: var(--font-weight-mono);
+  font-style: var(--font-style-mono);
+  font-variation-settings: var(--font-variation-mono);
+}

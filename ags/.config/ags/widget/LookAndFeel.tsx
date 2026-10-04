@@ -5,6 +5,7 @@ import Gio from "gi://Gio"
 import GdkPixbuf from "gi://GdkPixbuf"
 import ModalDialog from "./ModalDialog"
 import BrutalistButton from "./BrutalistButton"
+import FontRoleEditor, { FontFamilyInfo, FontRoleConfig } from "./FontRoleEditor"
 
 export const [isLookAndFeelVisible, setIsLookAndFeelVisible] = createState(false)
 export const [activeSubmenu, setActiveSubmenu] = createState<"theme" | "wallpaper" | "typefaces" | null>(null)
@@ -111,6 +112,54 @@ function saveThemePartial(partial: Partial<PaletteData>) {
   }
 }
 
+const defaultFontRoles: Record<string, FontRoleConfig> = {
+  sans: {
+    family: "Manrope",
+    size: 13,
+    weight: 400,
+    slant: 0,
+    axes: { wght: 400 },
+  },
+  mono: {
+    family: "Space Mono",
+    size: 13,
+    weight: 400,
+    slant: 0,
+    axes: {},
+  },
+  terminal: {
+    family: "JetBrainsMono Nerd Font",
+    size: 10.0,
+    weight: 400,
+    slant: 0,
+    axes: {},
+  },
+}
+
+function loadInitialFonts(): {
+  roles: {
+    sans: FontFamilyInfo[]
+    mono: FontFamilyInfo[]
+    terminal: FontFamilyInfo[]
+  }
+  current: Record<string, FontRoleConfig>
+} {
+  try {
+    const [, stdout] = GLib.spawn_command_line_sync(
+      `/usr/bin/python3 ${GLib.getenv("HOME")}/dotfiles/scripts/fonts.py list`
+    )
+    if (stdout) {
+      return JSON.parse(new TextDecoder().decode(stdout))
+    }
+  } catch (err) {
+    console.error("Failed to load fonts list:", err)
+  }
+  return {
+    roles: { sans: [], mono: [], terminal: [] },
+    current: defaultFontRoles,
+  }
+}
+
 function isLightColor(hex: string): boolean {
   if (!hex || hex.length < 7) return false
   const r = parseInt(hex.slice(1, 3), 16) || 0
@@ -141,6 +190,40 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
   const [palette, setPalette] = createState<PaletteData>(initial)
 
   const [animationOpen, setAnimationOpen] = createState(false)
+
+  const initialFonts = loadInitialFonts()
+  const [activeFontTab, setActiveFontTab] = createState<"sans" | "mono" | "terminal">("sans")
+  const [fontsConfig, setFontsConfig] = createState<Record<string, FontRoleConfig>>(initialFonts.current)
+
+  let fontSaveTimeoutId: number | null = null
+  const applyAndSaveFonts = (newFontsConfig: Record<string, FontRoleConfig>) => {
+    if (fontSaveTimeoutId) {
+      GLib.source_remove(fontSaveTimeoutId)
+    }
+    fontSaveTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
+      fontSaveTimeoutId = null
+      try {
+        Gio.Subprocess.new(
+          [
+            "/usr/bin/python3",
+            `${GLib.getenv("HOME")}/dotfiles/scripts/fonts.py`,
+            "apply",
+            JSON.stringify(newFontsConfig),
+          ],
+          Gio.SubprocessFlags.NONE
+        )
+      } catch (e) {
+        console.error("Failed to apply fonts:", e)
+      }
+      return GLib.SOURCE_REMOVE
+    })
+  }
+
+  const handleFontRoleChange = (role: "sans" | "mono" | "terminal", cfg: FontRoleConfig) => {
+    const updated = { ...fontsConfig(), [role]: cfg }
+    setFontsConfig(updated)
+    applyAndSaveFonts(updated)
+  }
 
   const deriveScriptPath = `${GLib.getenv("HOME")}/dotfiles/scripts/derive-palette.py`
 
@@ -605,24 +688,67 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
     </box>
   ) as Gtk.Box
 
+  const sansEditor = (
+    <FontRoleEditor
+      role="sans"
+      roleTitle="01. SANS SERIF"
+      roleDescription="Used for desktop UI, dialog labels, cards & buttons"
+      availableFonts={initialFonts.roles.sans}
+      initialConfig={fontsConfig().sans || defaultFontRoles.sans}
+      onConfigChanged={(cfg) => handleFontRoleChange("sans", cfg)}
+    />
+  ) as Gtk.Box
+
+  const monoEditor = (
+    <FontRoleEditor
+      role="mono"
+      roleTitle="02. MONOSPACE"
+      roleDescription="Used for top bar pill, headers, clock & status readouts"
+      availableFonts={initialFonts.roles.mono}
+      initialConfig={fontsConfig().mono || defaultFontRoles.mono}
+      onConfigChanged={(cfg) => handleFontRoleChange("mono", cfg)}
+    />
+  ) as Gtk.Box
+
+  const terminalEditor = (
+    <FontRoleEditor
+      role="terminal"
+      roleTitle="03. TERMINAL"
+      roleDescription="Used for Kitty terminal emulator"
+      availableFonts={initialFonts.roles.terminal}
+      initialConfig={fontsConfig().terminal || defaultFontRoles.terminal}
+      onConfigChanged={(cfg) => handleFontRoleChange("terminal", cfg)}
+    />
+  ) as Gtk.Box
+
   const typefacesPage = (
-    <box
-      class="typefaces-placeholder-box"
-      orientation={Gtk.Orientation.VERTICAL}
-      spacing={16}
-      valign={Gtk.Align.CENTER}
-      halign={Gtk.Align.CENTER}
-    >
-      <box class="placeholder-badge" spacing={8} halign={Gtk.Align.CENTER}>
-        <label class="placeholder-badge-text" label="UNDER CONSTRUCTION" />
+    <box class="typefaces-page-box" orientation={Gtk.Orientation.VERTICAL} spacing={12}>
+      <box class="font-tabs-bar" spacing={8} valign={Gtk.Align.CENTER}>
+        {[
+          { id: "sans" as const, label: "01. SANS" },
+          { id: "mono" as const, label: "02. MONO" },
+          { id: "terminal" as const, label: "03. TERMINAL" },
+        ].map((tab) => (
+          <button
+            class={createComputed(() =>
+              activeFontTab() === tab.id ? "radio-btn active font-tab-btn" : "radio-btn font-tab-btn"
+            )}
+            label={tab.label}
+            onClicked={() => setActiveFontTab(tab.id)}
+          />
+        ))}
       </box>
-      <label class="placeholder-title" label="TYPEFACES & FONTS" halign={Gtk.Align.CENTER} />
-      <label
-        class="placeholder-desc"
-        label="Font family selection, glyph weight scaling, and terminal typography settings will be available here."
-        halign={Gtk.Align.CENTER}
-        wrap
-        justify={Gtk.Justification.CENTER}
+      <stack
+        transitionType={Gtk.StackTransitionType.CROSSFADE}
+        transitionDuration={180}
+        $={(self: Gtk.Stack) => {
+          self.add_named(sansEditor, "sans")
+          self.add_named(monoEditor, "mono")
+          self.add_named(terminalEditor, "terminal")
+          const update = () => self.set_visible_child_name(activeFontTab())
+          update()
+          activeFontTab.subscribe(update)
+        }}
       />
     </box>
   ) as Gtk.Box

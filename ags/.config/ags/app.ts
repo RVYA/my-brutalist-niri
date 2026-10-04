@@ -8,15 +8,21 @@ import LookAndFeel, { toggleLookAndFeel, setActiveSubmenu } from "./widget/LookA
 
 const style = `${GLib.getenv("HOME")}/.config/ags/style.css`
 const colors = `${GLib.getenv("HOME")}/.config/ags/style/colors.css`
+const fonts = `${GLib.getenv("HOME")}/.config/ags/style/fonts.css`
 
 function reloadCss() {
   try {
     const [, colorsData] = GLib.file_get_contents(colors)
+    let fontsText = ""
+    try {
+      const [, fontsData] = GLib.file_get_contents(fonts)
+      fontsText = new TextDecoder().decode(fontsData)
+    } catch {}
     const [, styleData] = GLib.file_get_contents(style)
     const colorsText = new TextDecoder().decode(colorsData)
     const rawStyle = new TextDecoder().decode(styleData)
     const cleanedStyle = rawStyle.replace(/@import\s+[^;]+;/g, "")
-    const cssText = colorsText + "\n" + cleanedStyle
+    const cssText = colorsText + "\n" + fontsText + "\n" + cleanedStyle
     app.apply_css(cssText, true)
   } catch {
     app.apply_css(style, true)
