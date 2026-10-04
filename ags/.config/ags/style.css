@@ -893,55 +893,6 @@ scale slider {
   padding: 4px 0;
 }
 
-.font-role-header {
-  padding-bottom: 8px;
-  border-bottom: 1px solid alpha(@color-neutral, 0.2);
-}
-
-.font-role-title {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: @color-inverse;
-}
-
-.font-role-description {
-  font-size: 11px;
-  color: @color-neutral;
-}
-
-.font-badge {
-  border-radius: 9999px;
-  padding: 2px 8px;
-  min-height: 18px;
-}
-
-.font-badge.variable {
-  background-color: @color-accent;
-}
-
-.font-badge.variable .font-badge-label {
-  color: @color-obverse;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-
-.font-badge.static {
-  background-color: alpha(@color-neutral, 0.25);
-  border: 1px solid alpha(@color-neutral, 0.4);
-}
-
-.font-badge.static .font-badge-label {
-  color: @color-inverse;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-
 .font-section {
   padding: 4px 0;
 }
@@ -953,17 +904,59 @@ scale slider {
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: @color-neutral;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
-.font-family-chips-box {
-  padding: 2px 0;
+dropdown.brutalist-dropdown {
+  background-color: transparent;
+  border: 2px solid alpha(@color-neutral, 0.6);
+  border-radius: 8px;
+  min-height: 34px;
+  padding: 2px 10px;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
 }
 
-.font-chip-btn {
-  padding: 4px 10px;
-  font-size: 10px;
+dropdown.brutalist-dropdown:hover {
+  background-color: alpha(@color-inverse, 0.15);
+  border-color: @color-inverse;
+}
+
+dropdown.brutalist-dropdown > button {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: @color-inverse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0.5px;
+}
+
+dropdown.brutalist-dropdown popover contents {
+  background-color: @color-obverse;
+  border: 2px solid @color-neutral;
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+dropdown.brutalist-dropdown popover listview row {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: @color-inverse;
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+dropdown.brutalist-dropdown popover listview row:hover {
+  background-color: alpha(@color-inverse, 0.15);
+}
+
+dropdown.brutalist-dropdown popover listview row:selected {
+  background-color: @color-inverse;
+  color: @color-obverse;
 }
 
 .axis-control-row {
@@ -978,31 +971,13 @@ scale slider {
   letter-spacing: 0.5px;
 }
 
-.preset-chip {
-  padding: 3px 8px;
-  font-size: 9px;
-  letter-spacing: 0.5px;
-}
-
 .font-preview-box {
-  background-color: alpha(@color-obverse, 0.8);
+  background-color: alpha(@color-obverse, 0.85);
   border: 2px solid alpha(@color-neutral, 0.4);
   border-radius: 8px;
   padding: 16px;
-  min-height: 72px;
 }
 
-.font-preview-content {
-  line-height: 1.5;
-}
-
-.font-tabs-bar {
-  padding-bottom: 6px;
-  border-bottom: 1px solid alpha(@color-neutral, 0.2);
-  margin-bottom: 6px;
-}
-
-.font-tab-btn {
-  font-size: 11px;
-  font-weight: 700;
+.font-preview-line {
+  line-height: 1.6;
 }

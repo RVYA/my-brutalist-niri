@@ -122,16 +122,22 @@ def get_system_sans_families():
                 fams.add(f)
     return fams
 
+def is_font_installed(family):
+    p = subprocess.run(["fc-list", f":family={family}", "file"], capture_output=True, text=True)
+    return bool(p.stdout.strip())
+
 def list_fonts():
     current_config = load_saved_config()
     
     sans_list = []
     for fam in CURATED_SANS:
-        sans_list.append(inspect_family(fam))
+        if is_font_installed(fam):
+            sans_list.append(inspect_family(fam))
 
     mono_list = []
     for fam in CURATED_MONO:
-        mono_list.append(inspect_family(fam))
+        if is_font_installed(fam):
+            mono_list.append(inspect_family(fam))
 
     return {
         "roles": {

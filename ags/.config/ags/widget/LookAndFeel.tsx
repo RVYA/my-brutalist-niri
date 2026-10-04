@@ -192,7 +192,9 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
   const [animationOpen, setAnimationOpen] = createState(false)
 
   const initialFonts = loadInitialFonts()
-  const [activeFontTab, setActiveFontTab] = createState<"sans" | "mono" | "terminal">("sans")
+  const [headersOpen, setHeadersOpen] = createState(true)
+  const [bodyOpen, setBodyOpen] = createState(false)
+  const [terminalOpen, setTerminalOpen] = createState(false)
   const [fontsConfig, setFontsConfig] = createState<Record<string, FontRoleConfig>>(initialFonts.current)
 
   let fontSaveTimeoutId: number | null = null
@@ -688,33 +690,27 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
     </box>
   ) as Gtk.Box
 
-  const sansEditor = (
-    <FontRoleEditor
-      role="sans"
-      roleTitle="01. SANS SERIF"
-      roleDescription="Used for desktop UI, dialog labels, cards & buttons"
-      availableFonts={initialFonts.roles.sans}
-      initialConfig={fontsConfig().sans || defaultFontRoles.sans}
-      onConfigChanged={(cfg) => handleFontRoleChange("sans", cfg)}
-    />
-  ) as Gtk.Box
-
-  const monoEditor = (
+  const headersEditor = (
     <FontRoleEditor
       role="mono"
-      roleTitle="02. MONOSPACE"
-      roleDescription="Used for top bar pill, headers, clock & status readouts"
       availableFonts={initialFonts.roles.mono}
       initialConfig={fontsConfig().mono || defaultFontRoles.mono}
       onConfigChanged={(cfg) => handleFontRoleChange("mono", cfg)}
     />
   ) as Gtk.Box
 
+  const bodyEditor = (
+    <FontRoleEditor
+      role="sans"
+      availableFonts={initialFonts.roles.sans}
+      initialConfig={fontsConfig().sans || defaultFontRoles.sans}
+      onConfigChanged={(cfg) => handleFontRoleChange("sans", cfg)}
+    />
+  ) as Gtk.Box
+
   const terminalEditor = (
     <FontRoleEditor
       role="terminal"
-      roleTitle="03. TERMINAL"
-      roleDescription="Used for Kitty terminal emulator"
       availableFonts={initialFonts.roles.terminal}
       initialConfig={fontsConfig().terminal || defaultFontRoles.terminal}
       onConfigChanged={(cfg) => handleFontRoleChange("terminal", cfg)}
@@ -722,34 +718,66 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
   ) as Gtk.Box
 
   const typefacesPage = (
-    <box class="typefaces-page-box" orientation={Gtk.Orientation.VERTICAL} spacing={12}>
-      <box class="font-tabs-bar" spacing={8} valign={Gtk.Align.CENTER}>
-        {[
-          { id: "sans" as const, label: "01. SANS" },
-          { id: "mono" as const, label: "02. MONO" },
-          { id: "terminal" as const, label: "03. TERMINAL" },
-        ].map((tab) => (
-          <button
-            class={createComputed(() =>
-              activeFontTab() === tab.id ? "radio-btn active font-tab-btn" : "radio-btn font-tab-btn"
-            )}
-            label={tab.label}
-            onClicked={() => setActiveFontTab(tab.id)}
-          />
-        ))}
+    <box class="typefaces-page-box" orientation={Gtk.Orientation.VERTICAL} spacing={16}>
+      <box class="collapsible-section" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
+        <button
+          class="section-header-btn"
+          onClicked={() => setHeadersOpen(!headersOpen())}
+        >
+          <box spacing={10} valign={Gtk.Align.CENTER}>
+            <label class="section-title" label="HEADERS" hexpand xalign={0} />
+            <label
+              class="section-arrow"
+              label={createComputed(() => (headersOpen() ? "▾" : "▸"))}
+            />
+          </box>
+        </button>
+        <revealer revealChild={headersOpen} transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}>
+          <box class="section-content" orientation={Gtk.Orientation.VERTICAL} spacing={10}>
+            {headersEditor}
+          </box>
+        </revealer>
       </box>
-      <stack
-        transitionType={Gtk.StackTransitionType.CROSSFADE}
-        transitionDuration={180}
-        $={(self: Gtk.Stack) => {
-          self.add_named(sansEditor, "sans")
-          self.add_named(monoEditor, "mono")
-          self.add_named(terminalEditor, "terminal")
-          const update = () => self.set_visible_child_name(activeFontTab())
-          update()
-          activeFontTab.subscribe(update)
-        }}
-      />
+
+      <box class="collapsible-section" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
+        <button
+          class="section-header-btn"
+          onClicked={() => setBodyOpen(!bodyOpen())}
+        >
+          <box spacing={10} valign={Gtk.Align.CENTER}>
+            <label class="section-title" label="BODY" hexpand xalign={0} />
+            <label
+              class="section-arrow"
+              label={createComputed(() => (bodyOpen() ? "▾" : "▸"))}
+            />
+          </box>
+        </button>
+        <revealer revealChild={bodyOpen} transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}>
+          <box class="section-content" orientation={Gtk.Orientation.VERTICAL} spacing={10}>
+            {bodyEditor}
+          </box>
+        </revealer>
+      </box>
+
+      <box class="collapsible-section" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
+        <button
+          class="section-header-btn"
+          onClicked={() => setTerminalOpen(!terminalOpen())}
+        >
+          <box spacing={10} valign={Gtk.Align.CENTER}>
+            <label class="section-title" label="TERMINAL" hexpand xalign={0} />
+            <label
+              class="section-arrow"
+              label={createComputed(() => (terminalOpen() ? "▾" : "▸"))}
+            />
+          </box>
+        </button>
+        <revealer revealChild={terminalOpen} transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}>
+          <box class="section-content" orientation={Gtk.Orientation.VERTICAL} spacing={10}>
+            {terminalEditor}
+          </box>
+        </revealer>
+      </box>
     </box>
   ) as Gtk.Box
 

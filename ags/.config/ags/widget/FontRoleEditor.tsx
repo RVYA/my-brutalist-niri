@@ -30,23 +30,13 @@ export interface FontRoleConfig {
 
 interface FontRoleEditorProps {
   role: "sans" | "mono" | "terminal"
-  roleTitle: string
-  roleDescription: string
   availableFonts: FontFamilyInfo[]
   initialConfig: FontRoleConfig
   onConfigChanged: (config: FontRoleConfig) => void
 }
 
-const PRESETS = {
-  pangram: "The quick brown fox jumps over the lazy dog. 1234567890",
-  code: "fn main() -> Result<(), Box<dyn Error>> { let x = 42; Ok(()) } /* ~!@#$%^&*() */",
-  metrics: "01:23:45.678 | CPU 12% | 4096MB | #FF7B72 | 0x7FFF_FFFF | [1/9] ~ /dev/null",
-}
-
 export default function FontRoleEditor({
   role,
-  roleTitle,
-  roleDescription,
   availableFonts,
   initialConfig,
   onConfigChanged,
@@ -56,19 +46,16 @@ export default function FontRoleEditor({
   const [weight, setWeight] = createState(initialConfig.weight)
   const [slant, setSlant] = createState(initialConfig.slant)
   const [axes, setAxes] = createState<Record<string, number>>({ ...initialConfig.axes })
-  const [previewText, setPreviewText] = createState(
-    role === "terminal" ? PRESETS.code : role === "mono" ? PRESETS.metrics : PRESETS.pangram
-  )
-  const [activePreset, setActivePreset] = createState<"pangram" | "code" | "metrics">("pangram")
 
-  const currentFontInfo = createComputed(() => {
-    const fam = family()
-    return availableFonts.find((f) => f.family.toLowerCase() === fam.toLowerCase()) || {
-      family: fam,
-      is_variable: false,
-      axes: [],
-    }
-  })
+  const getFontInfo = (fam: string): FontFamilyInfo => {
+    return (
+      availableFonts.find((f) => f.family.toLowerCase() === fam.toLowerCase()) || {
+        family: fam,
+        is_variable: false,
+        axes: [],
+      }
+    )
+  }
 
   const previewProvider = new Gtk.CssProvider()
   const display = Gdk.Display.get_default()
@@ -96,7 +83,6 @@ export default function FontRoleEditor({
         font-style: ${cfg.slant > 0 ? "italic" : "normal"};
         font-variation-settings: ${varSettings};
         color: @color-inverse;
-        transition: font-size 0.08s ease;
       }
     `
     try {
@@ -124,213 +110,260 @@ export default function FontRoleEditor({
     axes: initialConfig.axes,
   })
 
-  const selectFont = (font: FontFamilyInfo) => {
-    setFamily(font.family)
-    const newAxes: Record<string, number> = {}
-    if (font.is_variable && font.axes.length > 0) {
-      for (const a of font.axes) {
-        newAxes[a.tag] = a.default
-      }
-      if (newAxes["wght"]) {
-        setWeight(Math.round(newAxes["wght"]))
-      }
+  let featuresContainer: Gtk.Box | null = null
+
+  const rebuildFeatures = () => {
+    if (!featuresContainer) return
+    while (featuresContainer.get_first_child()) {
+      featuresContainer.remove(featuresContainer.get_first_child()!)
     }
-    setAxes(newAxes)
-    notifyChange()
+
+    const info = getFontInfo(family())
+    const curAxes = { ...axes() }
+    const hasVarWeight = info.axes.some((a) => a.tag === "wght")
+
+    if (info.is_variable && info.axes.length > 0) {
+      const varSection = new Gtk.Box({
+        orientation: Gtk.Orientation.VERTICAL,
+        spacing: 8,
+        css_classes: ["font-section"],
+      })
+      const varLabel = new Gtk.Label({
+        label: "VARIABLE AXES",
+        halign: Gtk.Align.START,
+        css_classes: ["font-section-label"],
+      })
+      varSection.append(varLabel)
+
+      for (const axis of info.axes) {
+        const row = new Gtk.Box({
+          orientation: Gtk.Orientation.VERTICAL,
+          spacing: 4,
+          css_classes: ["axis-control-row"],
+        })
+        const header = new Gtk.Box({ spacing: 8, valign: Gtk.Align.CENTER })
+        const nameLabel = new Gtk.Label({
+          label: `${axis.name} (${axis.tag})`,
+          halign: Gtk.Align.START,
+          hexpand: true,
+          css_classes: ["axis-name-label"],
+        })
+        const valLabel = new Gtk.Label({
+          label:
+            axis.step < 1
+              ? (curAxes[axis.tag] ?? axis.default).toFixed(1)
+              : `${Math.round(curAxes[axis.tag] ?? axis.default)}`,
+          halign: Gtk.Align.END,
+          css_classes: ["slider-val"],
+        })
+        header.append(nameLabel)
+        header.append(valLabel)
+
+        const sliderRow = new Gtk.Box({
+          spacing: 12,
+          valign: Gtk.Align.CENTER,
+          css_classes: ["slider-row"],
+        })
+        const slider = new Gtk.Scale({
+          orientation: Gtk.Orientation.HORIZONTAL,
+          hexpand: true,
+          adjustment: new Gtk.Adjustment({
+            lower: axis.min,
+            upper: axis.max,
+            step_increment: axis.step,
+            page_increment: axis.step * 5,
+            value: curAxes[axis.tag] ?? axis.default,
+          }),
+        })
+        slider.connect("value-changed", () => {
+          const raw = slider.get_value()
+          const val = axis.step < 1 ? Number(raw.toFixed(1)) : Math.round(raw)
+          valLabel.set_label(axis.step < 1 ? val.toFixed(1) : `${val}`)
+          const updated = { ...axes(), [axis.tag]: val }
+          setAxes(updated)
+          if (axis.tag === "wght") {
+            setWeight(val)
+          }
+          if (axis.tag === "slnt") {
+            setSlant(val < 0 ? 1 : 0)
+          }
+          notifyChange()
+        })
+        sliderRow.append(slider)
+        row.append(header)
+        row.append(sliderRow)
+        varSection.append(row)
+      }
+      featuresContainer.append(varSection)
+    }
+
+    if (!hasVarWeight) {
+      const weightSection = new Gtk.Box({
+        orientation: Gtk.Orientation.VERTICAL,
+        spacing: 8,
+        css_classes: ["font-section"],
+      })
+      const weightLabel = new Gtk.Label({
+        label: "WEIGHT & STYLE",
+        halign: Gtk.Align.START,
+        css_classes: ["font-section-label"],
+      })
+      weightSection.append(weightLabel)
+
+      const weightRow = new Gtk.Box({ spacing: 8, valign: Gtk.Align.CENTER })
+      const weights = [
+        { label: "LIGHT", val: 300 },
+        { label: "REGULAR", val: 400 },
+        { label: "MEDIUM", val: 500 },
+        { label: "BOLD", val: 700 },
+      ]
+      const weightButtons: Gtk.Button[] = []
+
+      weights.forEach((w) => {
+        const btn = new Gtk.Button({
+          label: w.label,
+          css_classes: weight() === w.val ? ["radio-btn", "active"] : ["radio-btn"],
+        })
+        btn.connect("clicked", () => {
+          setWeight(w.val)
+          weightButtons.forEach((b, idx) => {
+            if (weights[idx].val === w.val) {
+              b.add_css_class("active")
+            } else {
+              b.remove_css_class("active")
+            }
+          })
+          notifyChange()
+        })
+        weightButtons.push(btn)
+        weightRow.append(btn)
+      })
+
+      const spacer = new Gtk.Box({ hexpand: true })
+      weightRow.append(spacer)
+
+      const italicBtn = new Gtk.Button({
+        label: "ITALIC",
+        css_classes: slant() > 0 ? ["radio-btn", "active"] : ["radio-btn"],
+      })
+      italicBtn.connect("clicked", () => {
+        const next = slant() > 0 ? 0 : 1
+        setSlant(next)
+        if (next > 0) {
+          italicBtn.add_css_class("active")
+        } else {
+          italicBtn.remove_css_class("active")
+        }
+        notifyChange()
+      })
+      weightRow.append(italicBtn)
+      weightSection.append(weightRow)
+      featuresContainer.append(weightSection)
+    }
   }
+
+  const initialIndex = Math.max(
+    0,
+    availableFonts.findIndex((f) => f.family.toLowerCase() === initialConfig.family.toLowerCase())
+  )
 
   return (
     <box class="font-role-card" orientation={Gtk.Orientation.VERTICAL} spacing={14}>
-      <box class="font-role-header" spacing={10} valign={Gtk.Align.CENTER}>
-        <box orientation={Gtk.Orientation.VERTICAL} spacing={2} hexpand>
-          <box spacing={8} valign={Gtk.Align.CENTER}>
-            <label class="font-role-title" label={roleTitle} halign={Gtk.Align.START} />
-            <box
-              class={createComputed(() =>
-                currentFontInfo().is_variable ? "font-badge variable" : "font-badge static"
-              )}
-            >
-              <label
-                class="font-badge-label"
-                label={createComputed(() =>
-                  currentFontInfo().is_variable ? "VARIABLE" : "STATIC"
-                )}
-              />
-            </box>
-          </box>
-          <label
-            class="font-role-description"
-            label={roleDescription}
-            halign={Gtk.Align.START}
-          />
-        </box>
-      </box>
-
       <box class="font-section" orientation={Gtk.Orientation.VERTICAL} spacing={6}>
         <label class="font-section-label" label="TYPEFACE" halign={Gtk.Align.START} />
-        <scrolledwindow
-          hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
-          vscrollbarPolicy={Gtk.PolicyType.NEVER}
-        >
-          <box class="font-family-chips-box" spacing={6}>
-            {availableFonts.map((f) => (
-              <button
-                class={createComputed(() =>
-                  family().toLowerCase() === f.family.toLowerCase()
-                    ? "radio-btn active font-chip-btn"
-                    : "radio-btn font-chip-btn"
-                )}
-                label={f.family.toUpperCase()}
-                onClicked={() => selectFont(f)}
-              />
-            ))}
-          </box>
-        </scrolledwindow>
+        <box
+          $={(self: Gtk.Box) => {
+            const fontNames = availableFonts.map((f) => f.family)
+            const dd = Gtk.DropDown.new_from_strings(fontNames)
+            dd.add_css_class("brutalist-dropdown")
+            dd.set_selected(initialIndex)
+            dd.connect("notify::selected", () => {
+              const item = dd.get_selected_item() as Gtk.StringObject
+              if (item) {
+                const selectedFam = item.get_string()
+                setFamily(selectedFam)
+                const info = getFontInfo(selectedFam)
+                const newAxes: Record<string, number> = {}
+                if (info.is_variable && info.axes.length > 0) {
+                  for (const a of info.axes) {
+                    newAxes[a.tag] = a.default
+                  }
+                  if (newAxes["wght"]) {
+                    setWeight(Math.round(newAxes["wght"]))
+                  }
+                }
+                setAxes(newAxes)
+                rebuildFeatures()
+                notifyChange()
+              }
+            })
+            self.append(dd)
+          }}
+        />
       </box>
 
       <box class="font-section" orientation={Gtk.Orientation.VERTICAL} spacing={6}>
-        <box spacing={8} valign={Gtk.Align.CENTER}>
-          <label class="font-section-label" label="FONT SIZE" hexpand halign={Gtk.Align.START} />
+        <label class="font-section-label" label="FONT SIZE" halign={Gtk.Align.START} />
+        <box class="filter-stepper-box" spacing={6} valign={Gtk.Align.CENTER} halign={Gtk.Align.START}>
+          <button
+            class="step-btn"
+            label="-"
+            onClicked={() => {
+              const step = role === "terminal" ? 0.5 : 1
+              const val = Math.max(8, Number((size() - step).toFixed(1)))
+              setSize(val)
+              notifyChange()
+            }}
+          />
           <label
-            class="slider-val"
+            class="step-value-label"
+            halign={Gtk.Align.CENTER}
             label={createComputed(() =>
               role === "terminal" ? `${size().toFixed(1)}PT` : `${Math.round(size())}PX`
             )}
           />
-        </box>
-        <box class="slider-row" spacing={12} valign={Gtk.Align.CENTER}>
-          <slider
-            hexpand
-            min={8}
-            max={26}
-            value={size}
-            onValueChanged={(self: Gtk.Scale) => {
-              const val = role === "terminal" ? Number(self.get_value().toFixed(1)) : Math.round(self.get_value())
-              if (val !== size()) {
-                setSize(val)
-                notifyChange()
-              }
+          <button
+            class="step-btn"
+            label="+"
+            onClicked={() => {
+              const step = role === "terminal" ? 0.5 : 1
+              const val = Math.min(32, Number((size() + step).toFixed(1)))
+              setSize(val)
+              notifyChange()
             }}
           />
         </box>
       </box>
 
-      {createComputed(() => {
-        const info = currentFontInfo()
-        if (info.is_variable && info.axes.length > 0) {
-          return (
-            <box class="font-section" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
-              <label class="font-section-label" label="VARIABLE AXES" halign={Gtk.Align.START} />
-              {info.axes.map((axis) => {
-                const curVal = createComputed(() => axes()[axis.tag] ?? axis.default)
-                return (
-                  <box class="axis-control-row" orientation={Gtk.Orientation.VERTICAL} spacing={4}>
-                    <box spacing={8} valign={Gtk.Align.CENTER}>
-                      <label
-                        class="axis-name-label"
-                        label={`${axis.name} (${axis.tag})`}
-                        hexpand
-                        halign={Gtk.Align.START}
-                      />
-                      <label
-                        class="slider-val"
-                        label={createComputed(() =>
-                          axis.step < 1 ? curVal().toFixed(1) : `${Math.round(curVal())}`
-                        )}
-                      />
-                    </box>
-                    <box class="slider-row" spacing={12} valign={Gtk.Align.CENTER}>
-                      <slider
-                        hexpand
-                        min={axis.min}
-                        max={axis.max}
-                        value={curVal}
-                        onValueChanged={(self: Gtk.Scale) => {
-                          const raw = self.get_value()
-                          const val = axis.step < 1 ? Number(raw.toFixed(1)) : Math.round(raw)
-                          const updated = { ...axes(), [axis.tag]: val }
-                          setAxes(updated)
-                          if (axis.tag === "wght") {
-                            setWeight(val)
-                          }
-                          if (axis.tag === "slnt") {
-                            setSlant(val < 0 ? 1 : 0)
-                          }
-                          notifyChange()
-                        }}
-                      />
-                    </box>
-                  </box>
-                )
-              })}
-            </box>
-          )
-        }
-
-        return (
-          <box class="font-section" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
-            <label class="font-section-label" label="WEIGHT & STYLE" halign={Gtk.Align.START} />
-            <box spacing={8} valign={Gtk.Align.CENTER}>
-              <label class="axis-name-label" label="WEIGHT" />
-              {[
-                { label: "LIGHT", val: 300 },
-                { label: "REGULAR", val: 400 },
-                { label: "MEDIUM", val: 500 },
-                { label: "BOLD", val: 700 },
-              ].map((w) => (
-                <button
-                  class={createComputed(() =>
-                    weight() === w.val ? "radio-btn active" : "radio-btn"
-                  )}
-                  label={w.label}
-                  onClicked={() => {
-                    setWeight(w.val)
-                    notifyChange()
-                  }}
-                />
-              ))}
-              <box hexpand />
-              <button
-                class={createComputed(() =>
-                  slant() > 0 ? "radio-btn active" : "radio-btn"
-                )}
-                label="ITALIC"
-                onClicked={() => {
-                  setSlant(slant() > 0 ? 0 : 1)
-                  notifyChange()
-                }}
-              />
-            </box>
-          </box>
-        )
-      })}
+      <box
+        orientation={Gtk.Orientation.VERTICAL}
+        spacing={8}
+        $={(self: Gtk.Box) => {
+          featuresContainer = self
+          rebuildFeatures()
+        }}
+      />
 
       <box class="font-section preview-section" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
-        <box spacing={8} valign={Gtk.Align.CENTER}>
-          <label class="font-section-label" label="LIVE TEXT PREVIEW" hexpand halign={Gtk.Align.START} />
-          <box spacing={4}>
-            {(["pangram", "code", "metrics"] as const).map((preset) => (
-              <button
-                class={createComputed(() =>
-                  activePreset() === preset ? "radio-btn active preset-chip" : "radio-btn preset-chip"
-                )}
-                label={preset.toUpperCase()}
-                onClicked={() => {
-                  setActivePreset(preset)
-                  setPreviewText(PRESETS[preset])
-                }}
-              />
-            ))}
-          </box>
-        </box>
-
-        <box class="font-preview-box">
+        <label class="font-section-label" label="PREVIEW" halign={Gtk.Align.START} />
+        <box class="font-preview-box" orientation={Gtk.Orientation.VERTICAL} spacing={6}>
           <label
-            class={`font-preview-content font-role-preview-${role}`}
-            label={previewText}
-            wrap
-            xalign={0}
+            class={`font-preview-line font-role-preview-${role}`}
+            label="The quick brown fox jumps over the lazy dog"
             halign={Gtk.Align.START}
+            xalign={0}
+          />
+          <label
+            class={`font-preview-line font-role-preview-${role}`}
+            label="ABCDEFGHIJKLMNOPQRSTUVWXYZ  0123456789"
+            halign={Gtk.Align.START}
+            xalign={0}
+          />
+          <label
+            class={`font-preview-line font-role-preview-${role}`}
+            label="fn phi() -> f64 { (1.0 + 5.0.sqrt()) / 2.0 } /* ~!=&| */"
+            halign={Gtk.Align.START}
+            xalign={0}
           />
         </box>
       </box>
