@@ -1,0 +1,7 @@
+@define-color color-obverse {{colors.surface.dark.hex}};
+@define-color color-inverse {{colors.on_surface.dark.hex}};
+@define-color color-neutral {{colors.outline.dark.hex}};
+@define-color color-warn #eed49f;
+@define-color color-error {{colors.error.dark.hex}};
+@define-color color-success #a6da95;
+@define-color color-accent {{colors.primary.dark.hex}};

@@ -1,0 +1,30 @@
+# Agentic workspace cache
+.agents/
+
+# AGS generated types, dependencies, and dynamic runtime state
+**/node_modules/
+**/@girs/
+ags/.config/ags/theme.json
+ags/.config/ags/style/colors.css
+
+# System & Editor artifacts
+.DS_Store
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Package managers & logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# General build/cache/temporary files
+dist/
+build/
+.cache/
+*.log
+*.tmp
+*.bak

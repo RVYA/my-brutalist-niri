@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Look & Feel
+Comment=Desktop theming, wallpaper selector, and palette manager
+Exec=ags request "toggle-look-and-feel"
+Icon=preferences-desktop-theme
+Terminal=false
+Type=Application
+Categories=Settings;DesktopSettings;

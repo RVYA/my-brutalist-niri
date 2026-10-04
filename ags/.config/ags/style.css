@@ -1,0 +1,414 @@
+@import "./style/colors.css";
+
+* {
+  all: unset;
+  font-family: "JetBrains Mono Nerd Font", "JetBrainsMono NF", "JetBrains Mono", monospace;
+  font-size: 13px;
+  color: @color-inverse;
+}
+
+window.main-topbar-window,
+window.tray-pill-window {
+  background: transparent;
+}
+
+window.modal-window-root {
+  background: transparent;
+}
+
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.55);
+}
+
+.topbar-pill {
+  background-color: @color-obverse;
+  border-radius: 9999px;
+  padding: 4px 16px;
+  margin-top: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  min-height: 28px;
+}
+
+.tray-pill {
+  background-color: @color-obverse;
+  border: 1px solid @color-neutral;
+  border-radius: 9999px;
+  padding: 4px 10px;
+  margin-top: 6px;
+  margin-right: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  min-height: 24px;
+}
+
+.window-controls {
+  margin-right: 2px;
+}
+
+.modal-header-left {
+  min-width: 20px;
+}
+
+.modal-header-right {
+  min-width: 20px;
+}
+
+.window-btn {
+  min-width: 12px;
+  min-height: 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.window-btn:hover {
+  filter: brightness(1.2);
+  transform: scale(1.1);
+}
+
+.btn-close {
+  background-color: @color-error;
+}
+
+.btn-minimize {
+  background-color: @color-warn;
+}
+
+.btn-maximize {
+  background-color: @color-success;
+}
+
+.separator {
+  min-width: 1px;
+  min-height: 14px;
+  background-color: @color-neutral;
+  margin: 0 2px;
+}
+
+.active-window-box {
+  padding: 0 2px;
+}
+
+.app-icon {
+  margin-right: 2px;
+}
+
+.verb-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: @color-accent;
+  margin-right: 2px;
+}
+
+.title-label {
+  font-weight: 600;
+  color: @color-inverse;
+}
+
+.clock-pill {
+  padding: 0 4px;
+}
+
+.clock-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: @color-inverse;
+  letter-spacing: 0.5px;
+}
+
+.tray-items-box {
+  padding: 0 2px;
+}
+
+.tray-icon {
+  opacity: 0.75;
+  filter: grayscale(100%);
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.tray-icon:hover {
+  opacity: 1;
+  filter: grayscale(0%);
+}
+
+.modal-card-container {
+  background-color: @color-obverse;
+  border: 1px solid @color-neutral;
+  border-radius: 16px;
+  padding: 16px 20px;
+  min-width: 720px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.75);
+}
+
+.modal-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid alpha(@color-neutral, 0.25);
+}
+
+.modal-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: @color-inverse;
+}
+
+.section-container {
+  background-color: alpha(@color-neutral, 0.06);
+  border: 1px solid alpha(@color-neutral, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.section-header-btn {
+  background: transparent;
+  padding: 4px 0;
+}
+
+.section-header-btn:hover .section-title {
+  color: @color-accent;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: @color-neutral;
+}
+
+.section-arrow {
+  font-size: 11px;
+  color: @color-neutral;
+}
+
+.section-content {
+  padding-top: 8px;
+}
+
+.palette-grid-container {
+  padding: 4px 0;
+}
+
+.palette-tile {
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 76px;
+  min-width: 76px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.palette-tile-obverse { background-color: @color-obverse; }
+.palette-tile-inverse { background-color: @color-inverse; }
+.palette-tile-neutral { background-color: @color-neutral; }
+.palette-tile-accent  { background-color: @color-accent; }
+.palette-tile-warn    { background-color: @color-warn; }
+.palette-tile-error   { background-color: @color-error; }
+.palette-tile-success { background-color: @color-success; }
+
+.palette-tile.tile-light .palette-tile-role,
+.palette-tile.tile-light .palette-tile-hex {
+  color: #000000;
+  text-shadow: none;
+}
+
+.palette-tile.tile-dark .palette-tile-role,
+.palette-tile.tile-dark .palette-tile-hex {
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.palette-tile-role {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.palette-tile-hex {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.filter-stepper-row {
+  padding: 4px 0;
+}
+
+.filter-row-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: @color-inverse;
+}
+
+.sub-section-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: @color-neutral;
+  margin-top: 6px;
+  margin-bottom: 2px;
+}
+
+.wallpaper-mode-row {
+  padding-top: 6px;
+  border-top: 1px solid alpha(@color-neutral, 0.15);
+  margin-top: 4px;
+}
+
+.wallpaper-filters-box {
+  padding-top: 4px;
+  border-top: 1px solid alpha(@color-neutral, 0.15);
+  margin-top: 4px;
+}
+
+.filter-stepper-box {
+  background-color: alpha(@color-neutral, 0.12);
+  border: 1px solid alpha(@color-neutral, 0.3);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+
+.step-btn {
+  background-color: alpha(@color-neutral, 0.2);
+  border: 1px solid alpha(@color-neutral, 0.35);
+  border-radius: 6px;
+  min-width: 28px;
+  min-height: 28px;
+  font-size: 15px;
+  font-weight: 700;
+  color: @color-inverse;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.step-btn:hover {
+  background-color: @color-accent;
+  color: @color-obverse;
+  border-color: @color-accent;
+}
+
+.step-value-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: @color-inverse;
+  min-width: 100px;
+}
+
+.wallpaper-carousel-box {
+  padding: 6px 0;
+}
+
+.wallpaper-carousel-overlay {
+  min-height: 240px;
+}
+
+.wallpaper-scrolled-window {
+  padding-bottom: 6px;
+}
+
+.wallpaper-card {
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 4px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.wallpaper-card:hover {
+  background-color: alpha(@color-neutral, 0.2);
+  border-color: @color-accent;
+}
+
+.wallpaper-preview {
+  min-width: 192px;
+  min-height: 108px;
+  border-radius: 6px;
+}
+
+.wallpaper-name {
+  font-size: 11px;
+  color: @color-inverse;
+}
+
+.carousel-nav-btn {
+  background-color: alpha(@color-obverse, 0.85);
+  border: 1px solid @color-neutral;
+  border-radius: 9999px;
+  min-width: 32px;
+  min-height: 32px;
+  font-size: 18px;
+  font-weight: 800;
+  color: @color-inverse;
+  margin: 0 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  transition: background-color 0.15s ease, transform 0.15s ease, color 0.15s ease;
+}
+
+.carousel-nav-btn:hover {
+  background-color: @color-accent;
+  color: @color-obverse;
+  border-color: @color-accent;
+  transform: scale(1.1);
+}
+
+.trans-btn {
+  background-color: alpha(@color-neutral, 0.15);
+  border: 1px solid alpha(@color-neutral, 0.3);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: @color-inverse;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.trans-btn:hover {
+  background-color: alpha(@color-accent, 0.2);
+  border-color: @color-accent;
+}
+
+.trans-btn.active {
+  background-color: @color-accent;
+  color: @color-obverse;
+  border-color: @color-accent;
+}
+
+scale {
+  min-height: 24px;
+  padding: 4px 0;
+}
+
+scale trough {
+  background-color: @color-neutral;
+  border-radius: 9999px;
+  min-height: 6px;
+  min-width: 100px;
+}
+
+scale highlight {
+  background-color: @color-accent;
+  border-radius: 9999px;
+  min-height: 6px;
+}
+
+scale slider {
+  background-color: @color-inverse;
+  border: 2px solid @color-obverse;
+  border-radius: 9999px;
+  min-width: 16px;
+  min-height: 16px;
+  margin: -5px 0;
+}
+
+.slider-row {
+  padding: 4px 0;
+}
+
+.slider-hint {
+  font-size: 11px;
+  color: @color-neutral;
+  font-weight: 600;
+}

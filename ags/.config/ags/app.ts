@@ -1,0 +1,72 @@
+import app from "ags/gtk4/app"
+import GLib from "gi://GLib"
+import Gio from "gi://Gio"
+import TopBar from "./widget/TopBar"
+import TrayPill from "./widget/TrayPill"
+import LookAndFeel, { toggleLookAndFeel } from "./widget/LookAndFeel"
+
+const style = `${GLib.getenv("HOME")}/.config/ags/style.css`
+const colors = `${GLib.getenv("HOME")}/.config/ags/style/colors.css`
+
+function reloadCss() {
+  try {
+    const [, colorsData] = GLib.file_get_contents(colors)
+    const [, styleData] = GLib.file_get_contents(style)
+    const colorsText = new TextDecoder().decode(colorsData)
+    const rawStyle = new TextDecoder().decode(styleData)
+    const cleanedStyle = rawStyle.replace(/@import\s+[^;]+;/g, "")
+    const cssText = colorsText + "\n" + cleanedStyle
+    app.apply_css(cssText, true)
+  } catch {
+    app.apply_css(style, true)
+  }
+}
+
+function initWallpaper() {
+  try {
+    const themeJson = `${GLib.getenv("HOME")}/.config/ags/theme.json`
+    const [, data] = GLib.file_get_contents(themeJson)
+    const theme = JSON.parse(new TextDecoder().decode(data))
+    if (theme?.wallpaper) {
+      const scriptPath = `${GLib.getenv("HOME")}/dotfiles/scripts/set-wallpaper.sh`
+      Gio.Subprocess.new(
+        [
+          "/usr/bin/bash",
+          scriptPath,
+          theme.wallpaper,
+          String(theme.step ?? 0),
+          "none",
+          "0.0",
+          theme.mode || "crop",
+        ],
+        Gio.SubprocessFlags.NONE
+      )
+    }
+  } catch {}
+}
+
+app.start({
+  main() {
+    reloadCss()
+    initWallpaper()
+    app.get_monitors().map((monitor) => {
+      TopBar(monitor)
+      LookAndFeel(monitor)
+    })
+  },
+
+  requestHandler(argv: string[], res) {
+    const cmd = Array.isArray(argv) ? argv.join(" ") : String(argv)
+    if (cmd.includes("reload-css")) {
+      reloadCss()
+      res("css reloaded")
+    } else if (cmd.includes("toggle-look-and-feel")) {
+      toggleLookAndFeel()
+      res("look-and-feel toggled")
+    } else {
+      res("unknown command")
+    }
+  },
+})
+
+
