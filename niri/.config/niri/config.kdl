@@ -3,6 +3,8 @@
 // Check the wiki for a full description of the configuration:
 // https://niri-wm.github.io/niri/Configuration:-Introduction
 
+prefer-no-csd
+
 input {
     keyboard {
         xkb {
@@ -36,14 +38,12 @@ layout {
 
     focus-ring {
         width 4
-        active-color "#7fc8ff"
         inactive-color "#505050"
     }
 
     border {
         off
         width 4
-        active-color "#ffc87f"
         inactive-color "#505050"
         urgent-color "#9b0000"
     }
@@ -69,6 +69,11 @@ hotkey-overlay {
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
 animations {
+}
+
+window-rule {
+    geometry-corner-radius 12
+    clip-to-geometry true
 }
 
 window-rule {
@@ -235,3 +240,5 @@ binds {
     Ctrl+Alt+Delete { quit; }
     Mod+Shift+P { power-off-monitors; }
 }
+
+include "colors.kdl"

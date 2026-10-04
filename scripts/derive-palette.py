@@ -188,6 +188,26 @@ def main():
         with open(THEME_JSON, "w") as f:
             json.dump(theme, f, indent=2)
 
+        niri_colors_user = os.path.expanduser("~/.config/niri/colors.kdl")
+        niri_colors_repo = os.path.expanduser("~/dotfiles/niri/.config/niri/colors.kdl")
+        niri_kdl = (
+            "layout {\n"
+            "    focus-ring {\n"
+            f'        active-color "{palette["accent"]}"\n'
+            "    }\n"
+            "    border {\n"
+            f'        active-color "{palette["accent"]}"\n'
+            "    }\n"
+            "}\n"
+        )
+        for npath in (niri_colors_user, niri_colors_repo):
+            try:
+                os.makedirs(os.path.dirname(npath), exist_ok=True)
+                with open(npath, "w") as f:
+                    f.write(niri_kdl)
+            except Exception:
+                pass
+
         subprocess.run(["ags", "request", "reload-css"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     print(json.dumps(palette))
