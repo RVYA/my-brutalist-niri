@@ -9,6 +9,10 @@ interface ModalDialogProps {
   gdkmonitor: Gdk.Monitor
   visible: () => boolean
   onClose: () => void
+  sideVisible?: () => boolean
+  sideTitle?: string | (() => string)
+  onSideClose?: () => void
+  sideChildren?: any
   children?: any
 }
 
@@ -18,12 +22,19 @@ export default function ModalDialog({
   gdkmonitor,
   visible,
   onClose,
+  sideVisible,
+  sideTitle,
+  onSideClose,
+  sideChildren,
   children,
 }: ModalDialogProps) {
   const { TOP, BOTTOM, LEFT, RIGHT } = Astal.WindowAnchor
-  const maxH = Math.round((gdkmonitor?.geometry?.height || 900) * 0.85)
-  let cardRef: Gtk.Box | null = null
+  const maxH = Math.round((gdkmonitor?.geometry?.height || 768) * 0.86)
+  let primaryCardRef: Gtk.Box | null = null
+  let sideCardRef: Gtk.Box | null = null
   let backdropRef: Gtk.CenterBox | null = null
+
+  const isSideOpen = sideVisible || (() => false)
 
   return (
     <window
@@ -41,6 +52,12 @@ export default function ModalDialog({
         const keyCtrl = new Gtk.EventControllerKey()
         keyCtrl.connect("key-pressed", (_ctrl, keyval) => {
           if (keyval === Gdk.KEY_Escape) {
+            if (isSideOpen()) {
+              if (onSideClose) {
+                onSideClose()
+                return true
+              }
+            }
             onClose()
             return true
           }
@@ -67,16 +84,30 @@ export default function ModalDialog({
           const click = new Gtk.GestureClick()
           click.set_propagation_phase(Gtk.PropagationPhase.BUBBLE)
           click.connect("pressed", (_gesture, _n, x, y) => {
-            if (cardRef && backdropRef) {
-              const [ok, bounds] = cardRef.compute_bounds(backdropRef)
-              if (
-                ok &&
-                x >= bounds.get_x() &&
-                x <= bounds.get_x() + bounds.get_width() &&
-                y >= bounds.get_y() &&
-                y <= bounds.get_y() + bounds.get_height()
-              ) {
-                return
+            if (backdropRef) {
+              if (primaryCardRef) {
+                const [ok, b] = primaryCardRef.compute_bounds(backdropRef)
+                if (
+                  ok &&
+                  x >= b.get_x() &&
+                  x <= b.get_x() + b.get_width() &&
+                  y >= b.get_y() &&
+                  y <= b.get_y() + b.get_height()
+                ) {
+                  return
+                }
+              }
+              if (isSideOpen() && sideCardRef) {
+                const [ok, b] = sideCardRef.compute_bounds(backdropRef)
+                if (
+                  ok &&
+                  x >= b.get_x() &&
+                  x <= b.get_x() + b.get_width() &&
+                  y >= b.get_y() &&
+                  y <= b.get_y() + b.get_height()
+                ) {
+                  return
+                }
               }
             }
             onClose()
@@ -85,42 +116,95 @@ export default function ModalDialog({
         }}
         centerWidget={
           <box
-            class="modal-card-container"
-            orientation={Gtk.Orientation.VERTICAL}
-            spacing={12}
+            class="modal-cluster"
+            orientation={Gtk.Orientation.HORIZONTAL}
+            spacing={16}
             valign={Gtk.Align.CENTER}
             halign={Gtk.Align.CENTER}
-            $={(self: Gtk.Box) => {
-              cardRef = self
-            }}
           >
-            <box class="modal-header" spacing={12} valign={Gtk.Align.CENTER}>
-              <box class="modal-header-left" valign={Gtk.Align.CENTER}>
-                <button
-                  class="window-btn btn-close"
-                  tooltipText="Close"
-                  onClicked={onClose}
+            <box
+              class={sideChildren ? "modal-card-container modal-primary-card" : "modal-card-container modal-standalone-card"}
+              orientation={Gtk.Orientation.VERTICAL}
+              spacing={12}
+              valign={Gtk.Align.CENTER}
+              $={(self: Gtk.Box) => {
+                primaryCardRef = self
+              }}
+            >
+              <box class="modal-header" spacing={12} valign={Gtk.Align.CENTER}>
+                <box class="modal-header-left" valign={Gtk.Align.CENTER}>
+                  <button
+                    class="window-btn btn-close"
+                    tooltipText="Close"
+                    onClicked={onClose}
+                  />
+                </box>
+                <label
+                  class="modal-title"
+                  label={title}
+                  hexpand
+                  halign={Gtk.Align.CENTER}
                 />
+                <box class="modal-header-right" />
               </box>
-              <label
-                class="modal-title"
-                label={title}
-                hexpand
-                halign={Gtk.Align.CENTER}
-              />
-              <box class="modal-header-right" />
+
+              <scrolledwindow
+                hscrollbarPolicy={Gtk.PolicyType.NEVER}
+                vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
+                maxContentHeight={maxH}
+                propagateNaturalHeight={true}
+              >
+                <box orientation={Gtk.Orientation.VERTICAL} spacing={10}>
+                  {children}
+                </box>
+              </scrolledwindow>
             </box>
 
-            <scrolledwindow
-              hscrollbarPolicy={Gtk.PolicyType.NEVER}
-              vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
-              maxContentHeight={maxH}
-              propagateNaturalHeight={true}
-            >
-              <box orientation={Gtk.Orientation.VERTICAL} spacing={10}>
-                {children}
-              </box>
-            </scrolledwindow>
+            {sideChildren && (
+              <revealer
+                revealChild={isSideOpen}
+                transitionType={Gtk.RevealerTransitionType.SLIDE_RIGHT}
+                transitionDuration={250}
+              >
+                <box
+                  class="modal-card-container modal-side-card"
+                  orientation={Gtk.Orientation.VERTICAL}
+                  spacing={12}
+                  valign={Gtk.Align.CENTER}
+                  $={(self: Gtk.Box) => {
+                    sideCardRef = self
+                  }}
+                >
+                  <box class="modal-header" spacing={12} valign={Gtk.Align.CENTER}>
+                    <label
+                      class="modal-title"
+                      label={sideTitle || ""}
+                      hexpand
+                      halign={Gtk.Align.START}
+                    />
+                    {onSideClose && (
+                      <button
+                        class="side-window-close-btn"
+                        label="✕"
+                        tooltipText="Close side panel"
+                        onClicked={onSideClose}
+                      />
+                    )}
+                  </box>
+
+                  <scrolledwindow
+                    hscrollbarPolicy={Gtk.PolicyType.NEVER}
+                    vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
+                    maxContentHeight={maxH}
+                    propagateNaturalHeight={true}
+                  >
+                    <box orientation={Gtk.Orientation.VERTICAL} spacing={10}>
+                      {sideChildren}
+                    </box>
+                  </scrolledwindow>
+                </box>
+              </revealer>
+            )}
           </box>
         }
       />
