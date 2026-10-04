@@ -12,6 +12,10 @@
   color: @color-inverse;
 }
 
+button label {
+  color: inherit;
+}
+
 window.main-topbar-window,
 window.tray-pill-window {
   background: transparent;
@@ -772,10 +776,26 @@ window.modal-window-root {
   transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
+.radio-btn label,
+.trans-btn label {
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: color 0.12s ease;
+}
+
 .radio-btn:hover,
 .trans-btn:hover {
   background-color: alpha(@color-inverse, 0.15);
   border-color: @color-inverse;
+  color: @color-inverse;
+}
+
+.radio-btn:hover label,
+.trans-btn:hover label {
   color: @color-inverse;
 }
 
@@ -786,10 +806,21 @@ window.modal-window-root {
   color: @color-obverse;
 }
 
+.radio-btn:active label,
+.trans-btn:active label {
+  color: @color-obverse;
+}
+
 .radio-btn.active,
 .trans-btn.active {
   background-color: @color-inverse;
   border-color: @color-inverse;
+  color: @color-obverse;
+  font-weight: 800;
+}
+
+.radio-btn.active label,
+.trans-btn.active label {
   color: @color-obverse;
   font-weight: 800;
 }
@@ -802,10 +833,20 @@ window.modal-window-root {
   opacity: 0.92;
 }
 
+.radio-btn.active:hover label,
+.trans-btn.active:hover label {
+  color: @color-obverse;
+}
+
 .radio-btn.active:active,
 .trans-btn.active:active {
   background-color: @color-accent;
   border-color: @color-accent;
+  color: @color-obverse;
+}
+
+.radio-btn.active:active label,
+.trans-btn.active:active label {
   color: @color-obverse;
 }
 
