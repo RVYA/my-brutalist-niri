@@ -2,6 +2,7 @@ import app from "ags/gtk4/app"
 import { Astal, Gtk, Gdk } from "ags/gtk4"
 import { createComputed } from "gnim"
 import GLib from "gi://GLib"
+import BrutalistButton from "./BrutalistButton"
 
 interface ModalDialogProps {
   name: string
@@ -175,21 +176,22 @@ export default function ModalDialog({
                     sideCardRef = self
                   }}
                 >
-                  <box class="modal-header" spacing={12} valign={Gtk.Align.CENTER}>
-                    <label
-                      class="modal-title"
-                      label={sideTitle || ""}
-                      hexpand
-                      halign={Gtk.Align.START}
-                    />
+                  <box class="modal-header" spacing={14} valign={Gtk.Align.CENTER}>
                     {onSideClose && (
-                      <button
-                        class="side-window-close-btn"
-                        label="✕"
-                        tooltipText="Close side panel"
+                      <BrutalistButton
+                        direction="left"
+                        tooltipText="Back"
+                        halign={Gtk.Align.START}
                         onClicked={onSideClose}
                       />
                     )}
+                    <label
+                      class="modal-title"
+                      label={sideTitle || ""}
+                      xalign={0}
+                      halign={Gtk.Align.START}
+                    />
+                    <box hexpand={true} />
                   </box>
 
                   <scrolledwindow

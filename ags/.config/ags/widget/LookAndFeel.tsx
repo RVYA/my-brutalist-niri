@@ -4,6 +4,7 @@ import GLib from "gi://GLib"
 import Gio from "gi://Gio"
 import GdkPixbuf from "gi://GdkPixbuf"
 import ModalDialog from "./ModalDialog"
+import BrutalistButton from "./BrutalistButton"
 
 export const [isLookAndFeelVisible, setIsLookAndFeelVisible] = createState(false)
 export const [activeSubmenu, setActiveSubmenu] = createState<"theme" | "wallpaper" | "typefaces" | null>(null)
@@ -966,66 +967,49 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
     >
       <box orientation={Gtk.Orientation.VERTICAL} spacing={8}>
         <label class="category-section-title" label="CATEGORIES" halign={Gtk.Align.START} />
-        <button
-          class={createComputed(() =>
-            activeSubmenu() === "theme" ? "brutal-nav-btn active" : "brutal-nav-btn"
-          )}
+        <BrutalistButton
+          label="01. THEME"
+          direction="right"
+          active={createComputed(() => activeSubmenu() === "theme")}
           onClicked={() => {
             setActiveSubmenu(activeSubmenu() === "theme" ? null : "theme")
           }}
         >
-          <box spacing={10} valign={Gtk.Align.CENTER}>
-            <label class="brutal-nav-num" label="01" />
-            <label class="brutal-nav-title" label="THEME" hexpand xalign={0} />
-            <box class="theme-nav-swatches" spacing={3} valign={Gtk.Align.CENTER}>
-              {([
-                "obverse",
-                "inverse",
-                "neutral",
-                "accent",
-                "warn",
-                "error",
-                "success",
-              ] as const).map((key) => (
-                <box
-                  class={`theme-nav-circle theme-nav-circle-${key}`}
-                  tooltipText={key.toUpperCase()}
-                />
-              ))}
-            </box>
-            <label class="brutal-nav-arrow" label="›" />
+          <box class="theme-nav-swatches" spacing={3} valign={Gtk.Align.CENTER}>
+            {([
+              "obverse",
+              "inverse",
+              "neutral",
+              "accent",
+              "warn",
+              "error",
+              "success",
+            ] as const).map((key) => (
+              <box
+                class={`theme-nav-circle theme-nav-circle-${key}`}
+                tooltipText={key.toUpperCase()}
+              />
+            ))}
           </box>
-        </button>
+        </BrutalistButton>
 
-          <button
-            class={createComputed(() =>
-              activeSubmenu() === "wallpaper" ? "brutal-nav-btn active" : "brutal-nav-btn"
-            )}
-            onClicked={() => {
-              setActiveSubmenu(activeSubmenu() === "wallpaper" ? null : "wallpaper")
-            }}
-          >
-            <box spacing={12} valign={Gtk.Align.CENTER}>
-              <label class="brutal-nav-num" label="02" />
-              <label class="brutal-nav-title" label="WALLPAPER" hexpand xalign={0} />
-              <label class="brutal-nav-arrow" label="›" />
-            </box>
-          </button>
+        <BrutalistButton
+          label="02. WALLPAPER"
+          direction="right"
+          active={createComputed(() => activeSubmenu() === "wallpaper")}
+          onClicked={() => {
+            setActiveSubmenu(activeSubmenu() === "wallpaper" ? null : "wallpaper")
+          }}
+        />
 
-          <button
-            class={createComputed(() =>
-              activeSubmenu() === "typefaces" ? "brutal-nav-btn active" : "brutal-nav-btn"
-            )}
-            onClicked={() => {
-              setActiveSubmenu(activeSubmenu() === "typefaces" ? null : "typefaces")
-            }}
-          >
-            <box spacing={12} valign={Gtk.Align.CENTER}>
-              <label class="brutal-nav-num" label="03" />
-              <label class="brutal-nav-title" label="TYPEFACES" hexpand xalign={0} />
-              <label class="brutal-nav-arrow" label="›" />
-            </box>
-          </button>
+        <BrutalistButton
+          label="03. TYPEFACES"
+          direction="right"
+          active={createComputed(() => activeSubmenu() === "typefaces")}
+          onClicked={() => {
+            setActiveSubmenu(activeSubmenu() === "typefaces" ? null : "typefaces")
+          }}
+        />
         </box>
     </ModalDialog>
   )
