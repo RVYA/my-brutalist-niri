@@ -6,9 +6,13 @@ import GdkPixbuf from "gi://GdkPixbuf"
 import ModalDialog from "./ModalDialog"
 
 export const [isLookAndFeelVisible, setIsLookAndFeelVisible] = createState(false)
+export const [activeSubmenu, setActiveSubmenu] = createState<"theme" | "wallpaper" | "typefaces" | null>(null)
 
 export function toggleLookAndFeel() {
   setIsLookAndFeelVisible(!isLookAndFeelVisible())
+  if (!isLookAndFeelVisible()) {
+    setActiveSubmenu(null)
+  }
 }
 
 const wallpapersDir = `${GLib.getenv("HOME")}/Pictures/Wallpapers`
@@ -23,7 +27,8 @@ function createWallpaperThumbnail(wpPath: string, width: number, height: number)
     pic.set_size_request(width, height)
     pic.add_css_class("wallpaper-preview")
     return pic
-  } catch {
+  } catch (err) {
+    console.error(`Failed to load thumbnail for ${wpPath}:`, err)
     const fallback = new Gtk.Box({ css_classes: ["wallpaper-preview"] })
     fallback.set_size_request(width, height)
     return fallback
@@ -56,6 +61,10 @@ interface PaletteData {
   wallpaper: string
   step: number
   mode?: string
+  transition_type?: string
+  transition_duration?: number
+  relation?: string
+  custom_accent?: string
   obverse: string
   inverse: string
   neutral: string
@@ -69,6 +78,10 @@ const defaultPalette: PaletteData = {
   wallpaper: "",
   step: 0,
   mode: "crop",
+  transition_type: "wipe",
+  transition_duration: 1.0,
+  relation: "tonal",
+  custom_accent: "auto",
   obverse: "#1a2026",
   inverse: "#ebeef2",
   neutral: "#83878c",
@@ -84,6 +97,16 @@ function loadPalette(): PaletteData {
     return JSON.parse(new TextDecoder().decode(data))
   } catch {
     return defaultPalette
+  }
+}
+
+function saveThemePartial(partial: Partial<PaletteData>) {
+  try {
+    const current = loadPalette()
+    const updated = { ...current, ...partial }
+    GLib.file_set_contents(themeJsonPath, JSON.stringify(updated, null, 2))
+  } catch (err) {
+    console.error("Failed to update theme.json:", err)
   }
 }
 
@@ -108,16 +131,148 @@ function updateTileContrast(tile: Gtk.Box, hex: string) {
 
 export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
   const initial = loadPalette()
-  const [lightnessStep, setLightnessStep] = createState(initial.step || 0)
+  const [lightnessStep, setLightnessStep] = createState(initial.step ?? 0)
   const [resizeMode, setResizeMode] = createState(initial.mode || "crop")
-  const [transitionType, setTransitionType] = createState("wipe")
-  const [transitionDuration, setTransitionDuration] = createState(1.0)
+  const [transitionType, setTransitionType] = createState(initial.transition_type || "wipe")
+  const [transitionDuration, setTransitionDuration] = createState(initial.transition_duration ?? 1.0)
   const [activeWallpaper, setActiveWallpaper] = createState(initial.wallpaper || "")
+  const [activeRelation, setActiveRelation] = createState(initial.relation || "tonal")
   const [palette, setPalette] = createState<PaletteData>(initial)
 
-  const [paletteOpen, setPaletteOpen] = createState(true)
-  const [wallpapersOpen, setWallpapersOpen] = createState(true)
   const [animationOpen, setAnimationOpen] = createState(false)
+
+  const deriveScriptPath = `${GLib.getenv("HOME")}/dotfiles/scripts/derive-palette.py`
+
+  const tileHexLabels: Record<string, Gtk.Label> = {}
+  const tileBoxes: Record<string, Gtk.Box> = {}
+  let accentHexLabel: Gtk.Label | null = null
+
+  const dynamicPaletteProvider = new Gtk.CssProvider()
+  const display = Gdk.Display.get_default()
+  if (display) {
+    Gtk.StyleContext.add_provider_for_display(
+      display,
+      dynamicPaletteProvider,
+      Gtk.STYLE_PROVIDER_PRIORITY_USER
+    )
+  }
+
+  function updatePaletteUI(p?: PaletteData) {
+    const cur = p || palette()
+    if (!cur) return
+    const keys: Array<keyof PaletteData> = [
+      "obverse",
+      "inverse",
+      "neutral",
+      "accent",
+      "warn",
+      "error",
+      "success",
+    ]
+    for (const key of keys) {
+      const val = (cur[key] || "").toString().toUpperCase()
+      if (tileHexLabels[key]) {
+        tileHexLabels[key].set_label(val)
+      }
+      if (tileBoxes[key]) {
+        updateTileContrast(tileBoxes[key], val)
+      }
+    }
+    if (accentHexLabel) {
+      accentHexLabel.set_label((cur.accent || "").toString().toUpperCase())
+    }
+    if (cur.relation && cur.relation !== activeRelation()) {
+      setActiveRelation(cur.relation)
+    }
+
+    try {
+      dynamicPaletteProvider.load_from_string(`
+        .palette-tile-obverse, .theme-nav-circle-obverse { background-color: ${cur.obverse}; }
+        .palette-tile-inverse, .theme-nav-circle-inverse { background-color: ${cur.inverse}; }
+        .palette-tile-neutral, .theme-nav-circle-neutral { background-color: ${cur.neutral}; }
+        .palette-tile-accent, .theme-nav-circle-accent, .accent-current-swatch { background-color: ${cur.accent}; }
+        .palette-tile-warn, .theme-nav-circle-warn { background-color: ${cur.warn}; }
+        .palette-tile-error, .theme-nav-circle-error { background-color: ${cur.error}; }
+        .palette-tile-success, .theme-nav-circle-success { background-color: ${cur.success}; }
+      `)
+    } catch {}
+  }
+
+  const applyRelation = (relation: string) => {
+    setActiveRelation(relation)
+    try {
+      const proc = Gio.Subprocess.new(
+        [
+          "/usr/bin/python3",
+          deriveScriptPath,
+          "--relation",
+          relation,
+          "--save",
+        ],
+        Gio.SubprocessFlags.STDOUT_PIPE
+      )
+      proc.communicate_utf8_async(null, null, (source, res) => {
+        try {
+          const [, stdout] = source.communicate_utf8_finish(res)
+          if (stdout) {
+            const updated = JSON.parse(stdout)
+            GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+              setPalette(updated)
+              updatePaletteUI(updated)
+              if (updated.relation) {
+                setActiveRelation(updated.relation)
+              }
+              const curHsl = hexToHsl(updated.accent || "#71f488")
+              setAccentHue(curHsl.h)
+              setAccentSaturation(Math.round(curHsl.s * 100))
+              setAccentLightness(Math.round(curHsl.l * 100))
+              return GLib.SOURCE_REMOVE
+            })
+          }
+        } catch (err) {
+          console.error("Failed to parse relation palette:", err)
+        }
+      })
+    } catch (err) {
+      console.error("Failed to apply relation:", err)
+    }
+  }
+
+  const applyAccent = (accent: string) => {
+    try {
+      const proc = Gio.Subprocess.new(
+        [
+          "/usr/bin/python3",
+          deriveScriptPath,
+          "--accent",
+          accent,
+          "--save",
+        ],
+        Gio.SubprocessFlags.STDOUT_PIPE
+      )
+      proc.communicate_utf8_async(null, null, (source, res) => {
+        try {
+          const [, stdout] = source.communicate_utf8_finish(res)
+          if (stdout) {
+            const updated = JSON.parse(stdout)
+            GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+              setPalette(updated)
+              updatePaletteUI(updated)
+              const curHsl = hexToHsl(updated.accent || "#71f488")
+              setAccentHue(curHsl.h)
+              setAccentSaturation(Math.round(curHsl.s * 100))
+              setAccentLightness(Math.round(curHsl.l * 100))
+              return GLib.SOURCE_REMOVE
+            })
+          }
+        } catch (err) {
+          console.error("Failed to parse accent palette:", err)
+        }
+      })
+    } catch (err) {
+      console.error("Failed to apply accent:", err)
+    }
+  }
 
   let scrollRef: Gtk.ScrolledWindow | null = null
 
@@ -159,7 +314,9 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
           source.wait_finish(res)
         } catch {}
         GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-          setPalette(loadPalette())
+          const updated = loadPalette()
+          setPalette(updated)
+          updatePaletteUI(updated)
           return GLib.SOURCE_REMOVE
         })
       })
@@ -173,300 +330,218 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
     return `${s}.LIGHT`
   })
 
-  return (
-    <ModalDialog
-      name="lookandfeel-window"
-      title="LOOK & FEEL"
-      gdkmonitor={gdkmonitor}
-      visible={isLookAndFeelVisible}
-      onClose={() => setIsLookAndFeelVisible(false)}
-    >
-      <box class="section-container" orientation={Gtk.Orientation.VERTICAL} spacing={6}>
-        <button
-          class="section-header-btn"
-          onClicked={() => setPaletteOpen(!paletteOpen())}
+  const wallpaperPage = (
+    <box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
+      <overlay
+        class="wallpaper-carousel-overlay"
+        hexpand
+        $={(self: Gtk.Overlay) => {
+          const prevBtn = new Gtk.Button({
+            css_classes: ["carousel-nav-btn", "nav-prev"],
+            label: "‹",
+            halign: Gtk.Align.START,
+            valign: Gtk.Align.CENTER,
+          })
+          prevBtn.connect("clicked", () => {
+            if (!scrollRef) return
+            const hadj = scrollRef.get_hadjustment()
+            if (!hadj) return
+            const page = hadj.get_page_size() > 0 ? hadj.get_page_size() * 0.7 : 420
+            const min = hadj.get_lower()
+            hadj.set_value(Math.max(min, hadj.get_value() - page))
+          })
+
+          const nextBtn = new Gtk.Button({
+            css_classes: ["carousel-nav-btn", "nav-next"],
+            label: "›",
+            halign: Gtk.Align.END,
+            valign: Gtk.Align.CENTER,
+          })
+          nextBtn.connect("clicked", () => {
+            if (!scrollRef) return
+            const hadj = scrollRef.get_hadjustment()
+            if (!hadj) return
+            const page = hadj.get_page_size() > 0 ? hadj.get_page_size() * 0.7 : 420
+            const min = hadj.get_lower()
+            const max = Math.max(min, hadj.get_upper() - hadj.get_page_size())
+            hadj.set_value(Math.min(max, hadj.get_value() + page))
+          })
+
+          self.add_overlay(prevBtn)
+          self.add_overlay(nextBtn)
+        }}
+      >
+        <scrolledwindow
+          class="wallpaper-scrolled-window"
+          hscrollbarPolicy={Gtk.PolicyType.ALWAYS}
+          vscrollbarPolicy={Gtk.PolicyType.NEVER}
+          minContentWidth={640}
+          minContentHeight={290}
+          hexpand
+          $={(self: Gtk.ScrolledWindow) => {
+            scrollRef = self
+            const scrollCtrl = new Gtk.EventControllerScroll({
+              flags: Gtk.EventControllerScrollFlags.BOTH_AXES,
+            })
+            scrollCtrl.connect("scroll", (_ctrl, dx, dy) => {
+              const hadj = self.get_hadjustment()
+              if (hadj) {
+                const delta = (dy !== 0 ? dy : dx) * 80
+                const min = hadj.get_lower()
+                const max = Math.max(min, hadj.get_upper() - hadj.get_page_size())
+                hadj.set_value(Math.max(min, Math.min(max, hadj.get_value() + delta)))
+                return true
+              }
+              return false
+            })
+            self.add_controller(scrollCtrl)
+          }}
         >
-          <box spacing={8}>
-            <label
-              class="section-title"
-              label="ACTIVE PALETTE"
-              hexpand
-              xalign={0}
-            />
-            <label
-              class="section-arrow"
-              label={createComputed(() => (paletteOpen() ? "▾" : "▸"))}
-            />
-          </box>
-        </button>
-        <revealer revealChild={paletteOpen} transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}>
-          <box class="section-content" orientation={Gtk.Orientation.VERTICAL}>
-            <box
-              class="palette-grid-container"
-              $={(self: Gtk.Box) => {
-                const grid = new Gtk.Grid({
-                  column_homogeneous: true,
-                  row_homogeneous: true,
-                  column_spacing: 10,
-                  row_spacing: 10,
-                  hexpand: true,
+          <box
+            class="wallpaper-carousel-box"
+            hexpand
+            $={(self: Gtk.Box) => {
+              const grid = new Gtk.Grid({
+                row_spacing: 10,
+                column_spacing: 10,
+                row_homogeneous: true,
+                column_homogeneous: true,
+              })
+
+              wallpapers.forEach((wp, idx) => {
+                const row = idx % 2
+                const col = Math.floor(idx / 2)
+                const filename = wp.split("/").pop() || ""
+
+                const btn = new Gtk.Button({ css_classes: ["wallpaper-card"] })
+                const cardBox = new Gtk.Box({
+                  orientation: Gtk.Orientation.VERTICAL,
+                  spacing: 4,
+                })
+                const pic = createWallpaperThumbnail(wp, 192, 108)
+
+                const thumbOverlay = new Gtk.Overlay()
+                thumbOverlay.set_child(pic)
+                const checkBadge = new Gtk.Label({
+                  label: "✓",
+                  css_classes: ["wallpaper-check-badge"],
+                  halign: Gtk.Align.END,
+                  valign: Gtk.Align.START,
+                })
+                thumbOverlay.add_overlay(checkBadge)
+
+                const lbl = new Gtk.Label({
+                  label: filename,
+                  max_width_chars: 18,
+                  ellipsize: 3,
+                  css_classes: ["wallpaper-name"],
                 })
 
-                const items: Array<{ key: keyof PaletteData; role: string }> = [
-                  { key: "obverse", role: "OBVERSE" },
-                  { key: "inverse", role: "INVERSE" },
-                  { key: "neutral", role: "NEUTRAL" },
-                  { key: "accent", role: "ACCENT" },
-                  { key: "warn", role: "WARN" },
-                  { key: "error", role: "ERROR" },
-                  { key: "success", role: "SUCCESS" },
-                ]
+                cardBox.append(thumbOverlay)
+                cardBox.append(lbl)
+                btn.set_child(cardBox)
 
-                items.forEach((it, idx) => {
-                  const col = idx % 3
-                  const row = Math.floor(idx / 3)
-                  const hex = createComputed(() => (palette()[it.key] || "").toUpperCase())
-                  const tileClass = createComputed(() => {
-                    const val = palette()[it.key] || ""
-                    const isLight = isLightColor(val)
-                    return `palette-tile palette-tile-${it.key} ${isLight ? "tile-light" : "tile-dark"}`
-                  })
+                const isSelected = (cur: string) =>
+                  cur === wp || (cur && cur.split("/").pop() === filename)
 
-                  const tileBox = (
-                    <box
-                      orientation={Gtk.Orientation.VERTICAL}
-                      hexpand
-                      vexpand
-                      class={tileClass}
-                    >
-                      <label
-                        class="palette-tile-role"
-                        label={it.role}
-                        halign={Gtk.Align.START}
-                        valign={Gtk.Align.START}
-                        hexpand
-                      />
-                      <label
-                        class="palette-tile-hex"
-                        label={hex}
-                        halign={Gtk.Align.END}
-                        valign={Gtk.Align.END}
-                        hexpand
-                        vexpand
-                      />
-                    </box>
-                  ) as Gtk.Box
+                const updateActive = () => {
+                  if (isSelected(activeWallpaper())) {
+                    btn.add_css_class("active")
+                  } else {
+                    btn.remove_css_class("active")
+                  }
+                }
 
-                  grid.attach(tileBox, col, row, 1, 1)
-                })
+                updateActive()
+                activeWallpaper.subscribe(updateActive)
 
-                self.append(grid)
+                btn.connect("clicked", () =>
+                  apply(
+                    wp,
+                    lightnessStep(),
+                    transitionType(),
+                    transitionDuration(),
+                    resizeMode()
+                  )
+                )
+                grid.attach(btn, col, row, 1, 1)
+              })
+
+              self.append(grid)
+            }}
+          />
+        </scrolledwindow>
+      </overlay>
+
+      <box class="wallpaper-mode-row" spacing={12} valign={Gtk.Align.CENTER}>
+        <label class="filter-row-label" label="TILING / RESIZE" hexpand halign={Gtk.Align.START} />
+        <box class="mode-btn-group" spacing={6} halign={Gtk.Align.END}>
+          {resizeOptions.map((opt) => (
+            <button
+              class={createComputed(() =>
+                resizeMode() === opt.value ? "trans-btn active" : "trans-btn"
+              )}
+              label={opt.label}
+              onClicked={() => {
+                setResizeMode(opt.value)
+                saveThemePartial({ mode: opt.value })
+                if (activeWallpaper()) {
+                  apply(
+                    activeWallpaper(),
+                    lightnessStep(),
+                    transitionType(),
+                    transitionDuration(),
+                    opt.value
+                  )
+                }
+              }}
+            />
+          ))}
+        </box>
+      </box>
+
+      <box class="wallpaper-filters-box" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
+        <label class="sub-section-title" label="FILTERS" halign={Gtk.Align.START} />
+        <box class="filter-stepper-row" spacing={14} valign={Gtk.Align.CENTER}>
+          <label class="filter-row-label" label="LIGHTNESS" hexpand halign={Gtk.Align.START} />
+          <box class="filter-stepper-box" spacing={12} valign={Gtk.Align.CENTER} halign={Gtk.Align.END}>
+            <button
+              class="step-btn"
+              label="−"
+              onClicked={() => {
+                const next = Math.max(-5, lightnessStep() - 1)
+                setLightnessStep(next)
+                if (activeWallpaper()) {
+                  apply(
+                    activeWallpaper(),
+                    next,
+                    transitionType(),
+                    transitionDuration(),
+                    resizeMode()
+                  )
+                }
+              }}
+            />
+            <label class="step-value-label" label={stepText} halign={Gtk.Align.CENTER} />
+            <button
+              class="step-btn"
+              label="+"
+              onClicked={() => {
+                const next = Math.min(5, lightnessStep() + 1)
+                setLightnessStep(next)
+                if (activeWallpaper()) {
+                  apply(
+                    activeWallpaper(),
+                    next,
+                    transitionType(),
+                    transitionDuration(),
+                    resizeMode()
+                  )
+                }
               }}
             />
           </box>
-        </revealer>
-      </box>
-
-      <box class="section-container" orientation={Gtk.Orientation.VERTICAL} spacing={6}>
-        <button
-          class="section-header-btn"
-          onClicked={() => setWallpapersOpen(!wallpapersOpen())}
-        >
-          <box spacing={8}>
-            <label
-              class="section-title"
-              label="WALLPAPERS"
-              hexpand
-              xalign={0}
-            />
-            <label
-              class="section-arrow"
-              label={createComputed(() => (wallpapersOpen() ? "▾" : "▸"))}
-            />
-          </box>
-        </button>
-        <revealer revealChild={wallpapersOpen} transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}>
-          <box class="section-content" orientation={Gtk.Orientation.VERTICAL} spacing={10} hexpand>
-            <overlay class="wallpaper-carousel-overlay" hexpand>
-              <scrolledwindow
-                class="wallpaper-scrolled-window"
-                hscrollbarPolicy={Gtk.PolicyType.ALWAYS}
-                vscrollbarPolicy={Gtk.PolicyType.NEVER}
-                minContentWidth={640}
-                minContentHeight={290}
-                hexpand
-                $={(self: Gtk.ScrolledWindow) => {
-                  scrollRef = self
-                  const scrollCtrl = new Gtk.EventControllerScroll({
-                    flags: Gtk.EventControllerScrollFlags.BOTH_AXES,
-                  })
-                  scrollCtrl.connect("scroll", (_ctrl, dx, dy) => {
-                    const hadj = self.get_hadjustment()
-                    if (hadj) {
-                      const delta = (dy !== 0 ? dy : dx) * 80
-                      const min = hadj.get_lower()
-                      const max = Math.max(min, hadj.get_upper() - hadj.get_page_size())
-                      hadj.set_value(Math.max(min, Math.min(max, hadj.get_value() + delta)))
-                      return true
-                    }
-                    return false
-                  })
-                  self.add_controller(scrollCtrl)
-                }}
-              >
-                <box
-                  class="wallpaper-carousel-box"
-                  hexpand
-                  $={(self: Gtk.Box) => {
-                    const grid = new Gtk.Grid({
-                      row_spacing: 10,
-                      column_spacing: 10,
-                      row_homogeneous: true,
-                      column_homogeneous: true,
-                    })
-
-                    wallpapers.forEach((wp, idx) => {
-                      const row = idx % 2
-                      const col = Math.floor(idx / 2)
-                      const filename = wp.split("/").pop() || ""
-
-                      const btn = new Gtk.Button({ css_classes: ["wallpaper-card"] })
-                      const cardBox = new Gtk.Box({
-                        orientation: Gtk.Orientation.VERTICAL,
-                        spacing: 4,
-                      })
-                      const pic = createWallpaperThumbnail(wp, 192, 108)
-
-                      const lbl = new Gtk.Label({
-                        label: filename,
-                        max_width_chars: 18,
-                        ellipsize: 3,
-                        css_classes: ["wallpaper-name"],
-                      })
-
-                      cardBox.append(pic)
-                      cardBox.append(lbl)
-                      btn.set_child(cardBox)
-                      btn.connect("clicked", () =>
-                        apply(
-                          wp,
-                          lightnessStep(),
-                          transitionType(),
-                          transitionDuration(),
-                          resizeMode()
-                        )
-                      )
-                      grid.attach(btn, col, row, 1, 1)
-                    })
-
-                    self.append(grid)
-                  }}
-                />
-              </scrolledwindow>
-
-              <button
-                class="carousel-nav-btn nav-prev"
-                label="‹"
-                halign={Gtk.Align.START}
-                valign={Gtk.Align.CENTER}
-                onClicked={() => {
-                  if (!scrollRef) return
-                  const hadj = scrollRef.get_hadjustment()
-                  if (!hadj) return
-                  const page = hadj.get_page_size() > 0 ? hadj.get_page_size() * 0.7 : 420
-                  const min = hadj.get_lower()
-                  hadj.set_value(Math.max(min, hadj.get_value() - page))
-                }}
-              />
-
-              <button
-                class="carousel-nav-btn nav-next"
-                label="›"
-                halign={Gtk.Align.END}
-                valign={Gtk.Align.CENTER}
-                onClicked={() => {
-                  if (!scrollRef) return
-                  const hadj = scrollRef.get_hadjustment()
-                  if (!hadj) return
-                  const page = hadj.get_page_size() > 0 ? hadj.get_page_size() * 0.7 : 420
-                  const min = hadj.get_lower()
-                  const max = Math.max(min, hadj.get_upper() - hadj.get_page_size())
-                  hadj.set_value(Math.min(max, hadj.get_value() + page))
-                }}
-              />
-            </overlay>
-
-            <box class="wallpaper-mode-row" spacing={12} valign={Gtk.Align.CENTER}>
-              <label class="filter-row-label" label="TILING / RESIZE" hexpand halign={Gtk.Align.START} />
-              <box class="mode-btn-group" spacing={6} halign={Gtk.Align.END}>
-                {resizeOptions.map((opt) => (
-                  <button
-                    class={createComputed(() =>
-                      resizeMode() === opt.value ? "trans-btn active" : "trans-btn"
-                    )}
-                    label={opt.label}
-                    onClicked={() => {
-                      setResizeMode(opt.value)
-                      if (activeWallpaper()) {
-                        apply(
-                          activeWallpaper(),
-                          lightnessStep(),
-                          transitionType(),
-                          transitionDuration(),
-                          opt.value
-                        )
-                      }
-                    }}
-                  />
-                ))}
-              </box>
-            </box>
-
-            <box class="wallpaper-filters-box" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
-              <label class="sub-section-title" label="FILTERS" halign={Gtk.Align.START} />
-              <box class="filter-stepper-row" spacing={14} valign={Gtk.Align.CENTER}>
-                <label class="filter-row-label" label="LIGHTNESS" hexpand halign={Gtk.Align.START} />
-                <box class="filter-stepper-box" spacing={12} valign={Gtk.Align.CENTER} halign={Gtk.Align.END}>
-                  <button
-                    class="step-btn"
-                    label="−"
-                    onClicked={() => {
-                      const next = Math.max(-5, lightnessStep() - 1)
-                      setLightnessStep(next)
-                      if (activeWallpaper()) {
-                        apply(
-                          activeWallpaper(),
-                          next,
-                          transitionType(),
-                          transitionDuration(),
-                          resizeMode()
-                        )
-                      }
-                    }}
-                  />
-                  <label class="step-value-label" label={stepText} halign={Gtk.Align.CENTER} />
-                  <button
-                    class="step-btn"
-                    label="+"
-                    onClicked={() => {
-                      const next = Math.min(5, lightnessStep() + 1)
-                      setLightnessStep(next)
-                      if (activeWallpaper()) {
-                        apply(
-                          activeWallpaper(),
-                          next,
-                          transitionType(),
-                          transitionDuration(),
-                          resizeMode()
-                        )
-                      }
-                    }}
-                  />
-                </box>
-              </box>
-            </box>
-          </box>
-        </revealer>
+        </box>
       </box>
 
       <box class="section-container" orientation={Gtk.Orientation.VERTICAL} spacing={6}>
@@ -498,7 +573,10 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
                       : "trans-btn"
                   )}
                   label={opt.toUpperCase()}
-                  onClicked={() => setTransitionType(opt)}
+                  onClicked={() => {
+                    setTransitionType(opt)
+                    saveThemePartial({ transition_type: opt })
+                  }}
                 />
               ))}
             </box>
@@ -510,7 +588,9 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
                 max={3.0}
                 value={transitionDuration}
                 onValueChanged={(self: Gtk.Scale) => {
-                  setTransitionDuration(self.get_value())
+                  const val = Number(self.get_value().toFixed(1))
+                  setTransitionDuration(val)
+                  saveThemePartial({ transition_duration: val })
                 }}
               />
               <label
@@ -521,6 +601,432 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
           </box>
         </revealer>
       </box>
+    </box>
+  ) as Gtk.Box
+
+  const typefacesPage = (
+    <box
+      class="typefaces-placeholder-box"
+      orientation={Gtk.Orientation.VERTICAL}
+      spacing={16}
+      valign={Gtk.Align.CENTER}
+      halign={Gtk.Align.CENTER}
+    >
+      <box class="placeholder-badge" spacing={8} halign={Gtk.Align.CENTER}>
+        <label class="placeholder-badge-text" label="UNDER CONSTRUCTION" />
+      </box>
+      <label class="placeholder-title" label="TYPEFACES & FONTS" halign={Gtk.Align.CENTER} />
+      <label
+        class="placeholder-desc"
+        label="Font family selection, glyph weight scaling, and terminal typography settings will be available here."
+        halign={Gtk.Align.CENTER}
+        wrap
+        justify={Gtk.Justification.CENTER}
+      />
+    </box>
+  ) as Gtk.Box
+
+  const relationOptions = [
+    { label: "TONAL", value: "tonal", desc: "Tonal luminance shift matching wallpaper hue" },
+    { label: "COMPLEMENT", value: "complement", desc: "Complementary hue on color wheel" },
+    { label: "ANALOGOUS", value: "analogous", desc: "Harmonious adjacent 38° hue shift" },
+    { label: "TRIADIC", value: "triadic", desc: "Dynamic 120° triadic hue distribution" },
+    { label: "NEUTRAL", value: "neutral", desc: "Desaturated monochromatic minimal relation" },
+  ]
+
+  function hslToHex(h: number, s: number, l: number): string {
+    const c = (1 - Math.abs(2 * l - 1)) * s
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+    const m = l - c / 2
+    let r = 0, g = 0, b = 0
+    if (h >= 0 && h < 60) { r = c; g = x; b = 0 }
+    else if (h >= 60 && h < 120) { r = x; g = c; b = 0 }
+    else if (h >= 120 && h < 180) { r = 0; g = c; b = x }
+    else if (h >= 180 && h < 240) { r = 0; g = x; b = c }
+    else if (h >= 240 && h < 300) { r = x; g = 0; b = c }
+    else { r = c; g = 0; b = x }
+    const toHex = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, "0")
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+  }
+
+  function hexToHsl(hex: string): { h: number; s: number; l: number } {
+    hex = hex.replace("#", "")
+    if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("")
+    const r = parseInt(hex.slice(0, 2), 16) / 255
+    const g = parseInt(hex.slice(2, 4), 16) / 255
+    const b = parseInt(hex.slice(4, 6), 16) / 255
+    const max = Math.max(r, g, b), min = Math.min(r, g, b)
+    let h = 0, s = 0, l = (max + min) / 2
+    if (max !== min) {
+      const d = max - min
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break
+        case g: h = (b - r) / d + 2; break
+        case b: h = (r - g) / d + 4; break
+      }
+      h = Math.round(h * 60)
+    }
+    return { h, s, l }
+  }
+
+  const [accentPickerOpen, setAccentPickerOpen] = createState(false)
+  const initialHsl = hexToHsl(initial.accent || "#71f488")
+  const [accentHue, setAccentHue] = createState(initialHsl.h)
+  const [accentSaturation, setAccentSaturation] = createState(Math.round(initialHsl.s * 100))
+  const [accentLightness, setAccentLightness] = createState(Math.round(initialHsl.l * 100))
+
+  let isSliding = false
+  let accentDebounceId: any = null
+
+  const debouncedApplyAccent = (hex: string) => {
+    if (accentDebounceId !== null) {
+      GLib.source_remove(accentDebounceId)
+      accentDebounceId = null
+    }
+    accentDebounceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 180, () => {
+      accentDebounceId = null
+      applyAccent(hex)
+      isSliding = false
+      return GLib.SOURCE_REMOVE
+    })
+  }
+
+  const handleLiveAccent = (hex: string) => {
+    const cur = palette()
+    const optimistic: PaletteData = {
+      ...cur,
+      accent: hex,
+      custom_accent: hex,
+    }
+    setPalette(optimistic)
+    updatePaletteUI(optimistic)
+    debouncedApplyAccent(hex)
+  }
+
+  palette.subscribe(() => {
+    const p = palette()
+    updatePaletteUI(p)
+    if (isSliding) return
+    const curHsl = hexToHsl(p.accent || "#71f488")
+    setAccentHue(curHsl.h)
+    setAccentSaturation(Math.round(curHsl.s * 100))
+    setAccentLightness(Math.round(curHsl.l * 100))
+  })
+
+  const themePage = (
+    <box orientation={Gtk.Orientation.VERTICAL} spacing={14}>
+      <box class="theme-section-card" orientation={Gtk.Orientation.VERTICAL} spacing={10}>
+        <label class="theme-sub-label" label="ACTIVE PALETTE" halign={Gtk.Align.START} />
+        <box
+          class="palette-grid-container"
+          $={(self: Gtk.Box) => {
+            const grid = new Gtk.Grid({
+              column_homogeneous: true,
+              row_homogeneous: true,
+              column_spacing: 10,
+              row_spacing: 10,
+              hexpand: true,
+            })
+
+            const items: Array<{ key: keyof PaletteData; role: string }> = [
+              { key: "obverse", role: "OBVERSE" },
+              { key: "inverse", role: "INVERSE" },
+              { key: "neutral", role: "NEUTRAL" },
+              { key: "accent", role: "ACCENT" },
+              { key: "warn", role: "WARN" },
+              { key: "error", role: "ERROR" },
+              { key: "success", role: "SUCCESS" },
+            ]
+
+            items.forEach((it, idx) => {
+              const col = idx % 4
+              const row = Math.floor(idx / 4)
+              const initialVal = (palette()[it.key] || "").toString().toUpperCase()
+              const isLight = isLightColor(initialVal)
+
+              const roleLabel = new Gtk.Label({
+                label: it.role,
+                css_classes: ["palette-tile-role"],
+                halign: Gtk.Align.START,
+                valign: Gtk.Align.START,
+                hexpand: true,
+              })
+
+              const hexLabel = new Gtk.Label({
+                label: initialVal,
+                css_classes: ["palette-tile-hex"],
+                halign: Gtk.Align.END,
+                valign: Gtk.Align.END,
+                hexpand: true,
+                vexpand: true,
+              })
+              tileHexLabels[it.key] = hexLabel
+
+              const tileBox = new Gtk.Box({
+                orientation: Gtk.Orientation.VERTICAL,
+                hexpand: true,
+                vexpand: true,
+                css_classes: [
+                  "palette-tile",
+                  `palette-tile-${it.key}`,
+                  isLight ? "tile-light" : "tile-dark",
+                ],
+              })
+              tileBox.append(roleLabel)
+              tileBox.append(hexLabel)
+              tileBoxes[it.key] = tileBox
+
+              grid.attach(tileBox, col, row, 1, 1)
+            })
+
+            self.append(grid)
+            updatePaletteUI(palette())
+          }}
+        />
+      </box>
+
+      <box class="theme-section-card" orientation={Gtk.Orientation.VERTICAL} spacing={10}>
+        <label class="theme-sub-label" label="COLOR RELATIONSHIP" halign={Gtk.Align.START} />
+        <box spacing={6}>
+          {relationOptions.map((opt) => (
+            <button
+              class={createComputed(() =>
+                activeRelation() === opt.value
+                  ? "trans-btn active"
+                  : "trans-btn"
+              )}
+              label={opt.label}
+              tooltipText={opt.desc}
+              onClicked={() => applyRelation(opt.value)}
+            />
+          ))}
+        </box>
+      </box>
+
+      <box class="theme-section-card" orientation={Gtk.Orientation.VERTICAL} spacing={10}>
+        <label class="theme-sub-label" label="ACCENT COLOR" halign={Gtk.Align.START} />
+        <box spacing={12} valign={Gtk.Align.CENTER}>
+          <button
+            class="accent-current-swatch"
+            tooltipText="Click to toggle custom color tuner"
+            onClicked={() => setAccentPickerOpen(!accentPickerOpen())}
+          />
+          <label
+            class="palette-tile-hex"
+            label={(palette().accent || "").toUpperCase()}
+            valign={Gtk.Align.CENTER}
+            $={(self: Gtk.Label) => {
+              accentHexLabel = self
+              self.set_label((palette().accent || "").toUpperCase())
+            }}
+          />
+          <button
+            class={createComputed(() =>
+              accentPickerOpen() ? "trans-btn active" : "trans-btn"
+            )}
+            label={createComputed(() =>
+              accentPickerOpen() ? "CUSTOMIZE ▴" : "CUSTOMIZE ▾"
+            )}
+            valign={Gtk.Align.CENTER}
+            onClicked={() => setAccentPickerOpen(!accentPickerOpen())}
+          />
+          <button
+            class={createComputed(() =>
+              (palette().custom_accent || "auto") === "auto"
+                ? "trans-btn active"
+                : "trans-btn"
+            )}
+            label="AUTO / SYNC"
+            tooltipText="Automatically derive accent color from wallpaper"
+            valign={Gtk.Align.CENTER}
+            onClicked={() => applyAccent("auto")}
+          />
+        </box>
+
+        <revealer revealChild={accentPickerOpen} transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}>
+          <box class="accent-picker-revealer-box" orientation={Gtk.Orientation.VERTICAL} spacing={10}>
+            <box class="accent-slider-row" spacing={10} valign={Gtk.Align.CENTER}>
+              <label class="accent-slider-label" label="HUE" />
+              <slider
+                class="hue-slider"
+                hexpand
+                min={0}
+                max={360}
+                value={accentHue}
+                onValueChanged={(self: Gtk.Scale) => {
+                  const val = Math.round(self.get_value())
+                  if (val === accentHue()) return
+                  isSliding = true
+                  setAccentHue(val)
+                  const hex = hslToHex(val, accentSaturation() / 100, accentLightness() / 100)
+                  handleLiveAccent(hex)
+                }}
+              />
+              <label
+                class="accent-slider-val"
+                label={createComputed(() => `${accentHue()}°`)}
+                halign={Gtk.Align.END}
+              />
+            </box>
+
+            <box class="accent-slider-row" spacing={10} valign={Gtk.Align.CENTER}>
+              <label class="accent-slider-label" label="SATURATION" />
+              <slider
+                class="saturation-slider"
+                hexpand
+                min={0}
+                max={100}
+                value={accentSaturation}
+                onValueChanged={(self: Gtk.Scale) => {
+                  const val = Math.round(self.get_value())
+                  if (val === accentSaturation()) return
+                  isSliding = true
+                  setAccentSaturation(val)
+                  const hex = hslToHex(accentHue(), val / 100, accentLightness() / 100)
+                  handleLiveAccent(hex)
+                }}
+              />
+              <label
+                class="accent-slider-val"
+                label={createComputed(() => `${accentSaturation()}%`)}
+                halign={Gtk.Align.END}
+              />
+            </box>
+
+            <box class="accent-slider-row" spacing={10} valign={Gtk.Align.CENTER}>
+              <label class="accent-slider-label" label="LIGHTNESS" />
+              <slider
+                class="lightness-slider"
+                hexpand
+                min={10}
+                max={95}
+                value={accentLightness}
+                onValueChanged={(self: Gtk.Scale) => {
+                  const val = Math.round(self.get_value())
+                  if (val === accentLightness()) return
+                  isSliding = true
+                  setAccentLightness(val)
+                  const hex = hslToHex(accentHue(), accentSaturation() / 100, val / 100)
+                  handleLiveAccent(hex)
+                }}
+              />
+              <label
+                class="accent-slider-val"
+                label={createComputed(() => `${accentLightness()}%`)}
+                halign={Gtk.Align.END}
+              />
+            </box>
+          </box>
+        </revealer>
+      </box>
+    </box>
+  ) as Gtk.Box
+
+  return (
+    <ModalDialog
+      name="lookandfeel-window"
+      title="LOOK & FEEL"
+      gdkmonitor={gdkmonitor}
+      visible={isLookAndFeelVisible}
+      onClose={() => {
+        setIsLookAndFeelVisible(false)
+        setActiveSubmenu(null)
+      }}
+      sideVisible={createComputed(() => activeSubmenu() !== null)}
+      sideTitle={createComputed(() =>
+        activeSubmenu() === "theme"
+          ? "THEME"
+          : activeSubmenu() === "wallpaper"
+            ? "WALLPAPER"
+            : activeSubmenu() === "typefaces"
+              ? "TYPEFACES"
+              : ""
+      )}
+      onSideClose={() => setActiveSubmenu(null)}
+      sideChildren={
+        <stack
+          transitionType={Gtk.StackTransitionType.CROSSFADE}
+          transitionDuration={200}
+          $={(self: Gtk.Stack) => {
+            self.add_named(themePage, "theme")
+            self.add_named(wallpaperPage, "wallpaper")
+            self.add_named(typefacesPage, "typefaces")
+            const updateStack = () => {
+              const cur = activeSubmenu()
+              if (cur) {
+                self.set_visible_child_name(cur)
+              }
+            }
+            updateStack()
+            activeSubmenu.subscribe(updateStack)
+          }}
+        />
+      }
+    >
+      <box orientation={Gtk.Orientation.VERTICAL} spacing={8}>
+        <label class="category-section-title" label="CATEGORIES" halign={Gtk.Align.START} />
+        <button
+          class={createComputed(() =>
+            activeSubmenu() === "theme" ? "brutal-nav-btn active" : "brutal-nav-btn"
+          )}
+          onClicked={() => {
+            setActiveSubmenu(activeSubmenu() === "theme" ? null : "theme")
+          }}
+        >
+          <box spacing={10} valign={Gtk.Align.CENTER}>
+            <label class="brutal-nav-num" label="01" />
+            <label class="brutal-nav-title" label="THEME" hexpand xalign={0} />
+            <box class="theme-nav-swatches" spacing={3} valign={Gtk.Align.CENTER}>
+              {([
+                "obverse",
+                "inverse",
+                "neutral",
+                "accent",
+                "warn",
+                "error",
+                "success",
+              ] as const).map((key) => (
+                <box
+                  class={`theme-nav-circle theme-nav-circle-${key}`}
+                  tooltipText={key.toUpperCase()}
+                />
+              ))}
+            </box>
+            <label class="brutal-nav-arrow" label="›" />
+          </box>
+        </button>
+
+          <button
+            class={createComputed(() =>
+              activeSubmenu() === "wallpaper" ? "brutal-nav-btn active" : "brutal-nav-btn"
+            )}
+            onClicked={() => {
+              setActiveSubmenu(activeSubmenu() === "wallpaper" ? null : "wallpaper")
+            }}
+          >
+            <box spacing={12} valign={Gtk.Align.CENTER}>
+              <label class="brutal-nav-num" label="02" />
+              <label class="brutal-nav-title" label="WALLPAPER" hexpand xalign={0} />
+              <label class="brutal-nav-arrow" label="›" />
+            </box>
+          </button>
+
+          <button
+            class={createComputed(() =>
+              activeSubmenu() === "typefaces" ? "brutal-nav-btn active" : "brutal-nav-btn"
+            )}
+            onClicked={() => {
+              setActiveSubmenu(activeSubmenu() === "typefaces" ? null : "typefaces")
+            }}
+          >
+            <box spacing={12} valign={Gtk.Align.CENTER}>
+              <label class="brutal-nav-num" label="03" />
+              <label class="brutal-nav-title" label="TYPEFACES" hexpand xalign={0} />
+              <label class="brutal-nav-arrow" label="›" />
+            </box>
+          </button>
+        </box>
     </ModalDialog>
   )
 }

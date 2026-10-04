@@ -1,8 +1,13 @@
 @import "./style/colors.css";
 
+:root {
+  --font-sans: "Manrope", sans-serif;
+  --font-mono: "Space Mono", monospace;
+}
+
 * {
   all: unset;
-  font-family: "JetBrains Mono Nerd Font", "JetBrainsMono NF", "JetBrains Mono", monospace;
+  font-family: var(--font-sans);
   font-size: 13px;
   color: @color-inverse;
 }
@@ -21,6 +26,7 @@ window.modal-window-root {
 }
 
 .topbar-pill {
+  font-family: var(--font-mono);
   background-color: @color-obverse;
   border-radius: 9999px;
   padding: 4px 16px;
@@ -93,8 +99,9 @@ window.modal-window-root {
 }
 
 .verb-label {
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: @color-accent;
@@ -102,7 +109,8 @@ window.modal-window-root {
 }
 
 .title-label {
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-weight: 700;
   color: @color-inverse;
 }
 
@@ -111,8 +119,9 @@ window.modal-window-root {
 }
 
 .clock-label {
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: @color-inverse;
   letter-spacing: 0.5px;
 }
@@ -137,8 +146,345 @@ window.modal-window-root {
   border: 1px solid @color-neutral;
   border-radius: 16px;
   padding: 16px 20px;
-  min-width: 720px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.75);
+}
+
+.modal-standalone-card {
+  min-width: 680px;
+}
+
+.modal-primary-card {
+  min-width: 380px;
+}
+
+.modal-side-card {
+  min-width: 680px;
+}
+
+.side-window-close-btn {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: @color-neutral;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  min-width: 24px;
+  min-height: 24px;
+  transition: all 0.15s ease;
+}
+
+.side-window-close-btn:hover {
+  color: @color-inverse;
+  background-color: alpha(@color-neutral, 0.2);
+  border-color: alpha(@color-neutral, 0.4);
+}
+
+.category-section-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: @color-neutral;
+  padding: 8px 4px 2px 4px;
+}
+
+.brutal-nav-btn {
+  font-family: var(--font-mono);
+  background-color: alpha(@color-neutral, 0.08);
+  border: 1px solid alpha(@color-neutral, 0.25);
+  border-radius: 8px;
+  padding: 12px 14px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.brutal-nav-btn:hover {
+  background-color: alpha(@color-neutral, 0.18);
+  border-color: @color-accent;
+}
+
+.brutal-nav-btn.active {
+  background-color: alpha(@color-accent, 0.15);
+  border-color: @color-accent;
+}
+
+.brutal-nav-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  color: @color-neutral;
+  letter-spacing: 1px;
+}
+
+.brutal-nav-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: @color-inverse;
+}
+
+.brutal-nav-btn:hover .brutal-nav-title,
+.brutal-nav-btn.active .brutal-nav-title {
+  color: @color-accent;
+}
+
+.brutal-nav-arrow {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  color: @color-neutral;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.brutal-nav-btn:hover .brutal-nav-arrow,
+.brutal-nav-btn.active .brutal-nav-arrow {
+  color: @color-accent;
+  transform: translateX(3px);
+}
+
+.theme-nav-swatches {
+  margin-right: 6px;
+}
+
+.theme-nav-circle {
+  min-width: 10px;
+  min-height: 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease;
+}
+
+.theme-nav-circle:hover {
+  transform: scale(1.25);
+}
+
+.theme-nav-circle-obverse { background-color: @color-obverse; }
+.theme-nav-circle-inverse { background-color: @color-inverse; }
+.theme-nav-circle-neutral { background-color: @color-neutral; }
+.theme-nav-circle-accent  { background-color: @color-accent; }
+.theme-nav-circle-warn    { background-color: @color-warn; }
+.theme-nav-circle-error   { background-color: @color-error; }
+.theme-nav-circle-success { background-color: @color-success; }
+
+.palette-bar-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: @color-inverse;
+}
+
+.palette-swatches-row {
+  padding: 0;
+}
+
+.palette-swatch {
+  min-width: 18px;
+  min-height: 18px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease;
+}
+
+.palette-swatch:hover {
+  transform: scale(1.25);
+}
+
+.palette-swatch-obverse { background-color: @color-obverse; }
+.palette-swatch-inverse { background-color: @color-inverse; }
+.palette-swatch-neutral { background-color: @color-neutral; }
+.palette-swatch-accent  { background-color: @color-accent; }
+.palette-swatch-warn    { background-color: @color-warn; }
+.palette-swatch-error   { background-color: @color-error; }
+.palette-swatch-success { background-color: @color-success; }
+
+.theme-section-card {
+  background-color: alpha(@color-neutral, 0.06);
+  border: 1px solid alpha(@color-neutral, 0.2);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.theme-sub-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: @color-neutral;
+}
+
+.accent-dialog-btn {
+  border-radius: 6px;
+  min-width: 48px;
+  min-height: 28px;
+  border: 1px solid alpha(@color-neutral, 0.35);
+}
+
+.accent-current-swatch {
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 6px;
+  background-color: @color-accent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.accent-picker-revealer-box {
+  padding-top: 10px;
+  border-top: 1px solid alpha(@color-neutral, 0.15);
+  margin-top: 4px;
+}
+
+.hue-slider trough {
+  background-image: linear-gradient(to right,
+    #ff0000 0%,
+    #ffff00 17%,
+    #00ff00 33%,
+    #00ffff 50%,
+    #0000ff 67%,
+    #ff00ff 83%,
+    #ff0000 100%
+  );
+  min-height: 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.hue-slider highlight {
+  background-color: transparent;
+  min-height: 8px;
+}
+
+.hue-slider slider {
+  background-color: #ffffff;
+  border: 2px solid @color-obverse;
+  border-radius: 9999px;
+  min-width: 16px;
+  min-height: 16px;
+  margin: -4px 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.saturation-slider trough {
+  background-image: linear-gradient(to right, #707070, @color-accent);
+  min-height: 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.saturation-slider highlight {
+  background-color: transparent;
+  min-height: 8px;
+}
+
+.saturation-slider slider {
+  background-color: #ffffff;
+  border: 2px solid @color-obverse;
+  border-radius: 9999px;
+  min-width: 16px;
+  min-height: 16px;
+  margin: -4px 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.lightness-slider trough {
+  background-image: linear-gradient(to right, #111111, @color-accent, #ffffff);
+  min-height: 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.lightness-slider highlight {
+  background-color: transparent;
+  min-height: 8px;
+}
+
+.lightness-slider slider {
+  background-color: #ffffff;
+  border: 2px solid @color-obverse;
+  border-radius: 9999px;
+  min-width: 16px;
+  min-height: 16px;
+  margin: -4px 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.accent-slider-row {
+  padding: 3px 0;
+}
+
+.accent-slider-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: @color-neutral;
+  min-width: 85px;
+}
+
+.accent-slider-val {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: @color-inverse;
+  min-width: 36px;
+}
+
+.accent-hex-entry {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: @color-inverse;
+  background-color: alpha(@color-neutral, 0.15);
+  border: 1px solid alpha(@color-neutral, 0.35);
+  border-radius: 6px;
+  padding: 4px 8px;
+  min-width: 80px;
+}
+
+.accent-hex-entry:focus {
+  border-color: @color-accent;
+  background-color: alpha(@color-accent, 0.12);
+}
+
+.typefaces-placeholder-box {
+  padding: 48px 24px;
+  min-height: 280px;
+}
+
+.placeholder-badge {
+  background-color: alpha(@color-neutral, 0.15);
+  border: 1px solid alpha(@color-neutral, 0.3);
+  border-radius: 4px;
+  padding: 4px 10px;
+}
+
+.placeholder-badge-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: @color-accent;
+}
+
+.placeholder-title {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: @color-inverse;
+}
+
+.placeholder-desc {
+  font-size: 12px;
+  color: @color-neutral;
+  line-height: 1.5;
 }
 
 .modal-header {
@@ -147,8 +493,9 @@ window.modal-window-root {
 }
 
 .modal-title {
+  font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 2px;
   color: @color-inverse;
 }
@@ -170,6 +517,7 @@ window.modal-window-root {
 }
 
 .section-title {
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -219,13 +567,15 @@ window.modal-window-root {
 }
 
 .palette-tile-role {
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 1px;
 }
 
 .palette-tile-hex {
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
 }
@@ -235,6 +585,7 @@ window.modal-window-root {
 }
 
 .filter-row-label {
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -242,8 +593,9 @@ window.modal-window-root {
 }
 
 .sub-section-title {
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: @color-neutral;
@@ -271,12 +623,13 @@ window.modal-window-root {
 }
 
 .step-btn {
+  font-family: var(--font-mono);
   background-color: alpha(@color-neutral, 0.2);
   border: 1px solid alpha(@color-neutral, 0.35);
   border-radius: 6px;
   min-width: 28px;
   min-height: 28px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: @color-inverse;
   transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -289,7 +642,8 @@ window.modal-window-root {
 }
 
 .step-value-label {
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
   color: @color-inverse;
@@ -310,15 +664,21 @@ window.modal-window-root {
 
 .wallpaper-card {
   background-color: transparent;
-  border: 1px solid transparent;
+  border: 2px solid transparent;
   border-radius: 8px;
   padding: 4px;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .wallpaper-card:hover {
   background-color: alpha(@color-neutral, 0.2);
+  border-color: alpha(@color-accent, 0.5);
+}
+
+.wallpaper-card.active {
+  background-color: alpha(@color-accent, 0.15);
   border-color: @color-accent;
+  box-shadow: 0 0 10px alpha(@color-accent, 0.35);
 }
 
 .wallpaper-preview {
@@ -327,9 +687,32 @@ window.modal-window-root {
   border-radius: 6px;
 }
 
+.wallpaper-check-badge {
+  background-color: @color-accent;
+  color: @color-obverse;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  min-width: 22px;
+  min-height: 22px;
+  margin: 6px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.wallpaper-card.active .wallpaper-check-badge {
+  opacity: 1;
+}
+
 .wallpaper-name {
   font-size: 11px;
   color: @color-inverse;
+  transition: color 0.15s ease;
+}
+
+.wallpaper-card.active .wallpaper-name {
+  color: @color-accent;
+  font-weight: 700;
 }
 
 .carousel-nav-btn {
@@ -408,7 +791,8 @@ scale slider {
 }
 
 .slider-hint {
+  font-family: var(--font-mono);
   font-size: 11px;
   color: @color-neutral;
-  font-weight: 600;
+  font-weight: 700;
 }
