@@ -480,7 +480,7 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
           {resizeOptions.map((opt) => (
             <button
               class={createComputed(() =>
-                resizeMode() === opt.value ? "trans-btn active" : "trans-btn"
+                resizeMode() === opt.value ? "radio-btn active" : "radio-btn"
               )}
               label={opt.label}
               onClicked={() => {
@@ -570,8 +570,8 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
                 <button
                   class={createComputed(() =>
                     transitionType() === opt
-                      ? "trans-btn active"
-                      : "trans-btn"
+                      ? "radio-btn active"
+                      : "radio-btn"
                   )}
                   label={opt.toUpperCase()}
                   onClicked={() => {
@@ -794,8 +794,8 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
             <button
               class={createComputed(() =>
                 activeRelation() === opt.value
-                  ? "trans-btn active"
-                  : "trans-btn"
+                  ? "radio-btn active"
+                  : "radio-btn"
               )}
               label={opt.label}
               tooltipText={opt.desc}
@@ -824,7 +824,7 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
           />
           <button
             class={createComputed(() =>
-              accentPickerOpen() ? "trans-btn active" : "trans-btn"
+              accentPickerOpen() ? "radio-btn active" : "radio-btn"
             )}
             label={createComputed(() =>
               accentPickerOpen() ? "CUSTOMIZE ▴" : "CUSTOMIZE ▾"
@@ -835,8 +835,8 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
           <button
             class={createComputed(() =>
               (palette().custom_accent || "auto") === "auto"
-                ? "trans-btn active"
-                : "trans-btn"
+                ? "radio-btn active"
+                : "radio-btn"
             )}
             label="AUTO / SYNC"
             tooltipText="Automatically derive accent color from wallpaper"

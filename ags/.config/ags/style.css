@@ -639,18 +639,24 @@ window.modal-window-root {
 
 .step-btn {
   font-family: var(--font-mono);
-  background-color: alpha(@color-neutral, 0.2);
-  border: 1px solid alpha(@color-neutral, 0.35);
-  border-radius: 6px;
+  background-color: transparent;
+  border: 2px solid alpha(@color-neutral, 0.6);
+  border-radius: 4px;
   min-width: 28px;
   min-height: 28px;
   font-size: 14px;
   font-weight: 700;
   color: @color-inverse;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
 .step-btn:hover {
+  background-color: alpha(@color-inverse, 0.15);
+  border-color: @color-inverse;
+  color: @color-inverse;
+}
+
+.step-btn:active {
   background-color: @color-accent;
   color: @color-obverse;
   border-color: @color-accent;
@@ -751,27 +757,56 @@ window.modal-window-root {
   transform: scale(1.1);
 }
 
+.radio-btn,
 .trans-btn {
-  background-color: alpha(@color-neutral, 0.15);
-  border: 1px solid alpha(@color-neutral, 0.3);
-  border-radius: 6px;
+  font-family: var(--font-mono);
+  background-color: transparent;
+  border: 2px solid alpha(@color-neutral, 0.6);
+  border-radius: 4px;
   padding: 5px 12px;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
   color: @color-inverse;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
+.radio-btn:hover,
 .trans-btn:hover {
-  background-color: alpha(@color-accent, 0.2);
-  border-color: @color-accent;
+  background-color: alpha(@color-inverse, 0.15);
+  border-color: @color-inverse;
+  color: @color-inverse;
 }
 
-.trans-btn.active {
+.radio-btn:active,
+.trans-btn:active {
   background-color: @color-accent;
-  color: @color-obverse;
   border-color: @color-accent;
+  color: @color-obverse;
+}
+
+.radio-btn.active,
+.trans-btn.active {
+  background-color: @color-inverse;
+  border-color: @color-inverse;
+  color: @color-obverse;
+  font-weight: 800;
+}
+
+.radio-btn.active:hover,
+.trans-btn.active:hover {
+  background-color: @color-inverse;
+  border-color: @color-inverse;
+  color: @color-obverse;
+  opacity: 0.92;
+}
+
+.radio-btn.active:active,
+.trans-btn.active:active {
+  background-color: @color-accent;
+  border-color: @color-accent;
+  color: @color-obverse;
 }
 
 scale {
