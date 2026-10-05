@@ -59,48 +59,85 @@ const [focusedWindow, setFocusedWindow] = createState<FocusedWindow>({
   sizingState: "none",
 })
 
+const [hasExpandedWindow, setHasExpandedWindow] = createState(false)
+
 async function updateFocusedWindow() {
   try {
-    const raw = await execAsync("niri msg --json focused-window")
-    if (!raw || raw.trim() === "null") {
+    const [rawFocused, rawWindows, rawWorkspaces] = await Promise.all([
+      execAsync("niri msg --json focused-window").catch(() => null),
+      execAsync("niri msg --json windows").catch(() => null),
+      execAsync("niri msg --json workspaces").catch(() => null),
+    ])
+
+    if (!rawFocused || rawFocused.trim() === "null") {
       setFocusedWindow({
         title: "DESKTOP",
         appId: "",
         sizingState: "none",
       })
-      return
-    }
-    const data = JSON.parse(raw)
-    const appId = data.app_id || ""
-    const rawTitle = data.title || ""
-    const title = cleanTitle(rawTitle, appId)
+    } else {
+      const data = JSON.parse(rawFocused)
+      const appId = data.app_id || ""
+      const rawTitle = data.title || ""
+      const title = cleanTitle(rawTitle, appId)
 
-    let sizingState: WindowSizingState = "half"
-    if (data.layout?.tile_size) {
-      const [w, h] = data.layout.tile_size
-      const widthRatio = w / cachedMonitorWidth
-      const heightRatio = h / cachedMonitorHeight
-      if (widthRatio >= 0.8) {
-        sizingState = "expanded"
-      } else if (heightRatio <= 0.65) {
-        sizingState = "quarter"
-      } else {
-        sizingState = "half"
+      let sizingState: WindowSizingState = "half"
+      if (data.layout?.tile_size) {
+        const [w, h] = data.layout.tile_size
+        if (w >= cachedMonitorWidth && h >= cachedMonitorHeight) {
+          execAsync("niri msg action maximize-window-to-edges")
+          execAsync("niri msg action maximize-column")
+        }
+        const widthRatio = w / cachedMonitorWidth
+        const heightRatio = h / cachedMonitorHeight
+        if (widthRatio >= 0.8) {
+          sizingState = "expanded"
+        } else if (heightRatio <= 0.65) {
+          sizingState = "quarter"
+        } else {
+          sizingState = "half"
+        }
       }
+
+      setFocusedWindow({
+        id: data.id,
+        title,
+        appId,
+        sizingState,
+      })
     }
 
-    setFocusedWindow({
-      id: data.id,
-      title,
-      appId,
-      sizingState,
-    })
+    let anyExpanded = false
+    if (rawWindows) {
+      try {
+        const windows = JSON.parse(rawWindows)
+        let activeWsId: number | null = null
+        if (rawWorkspaces) {
+          const workspaces = JSON.parse(rawWorkspaces)
+          const activeWs = workspaces.find((w: any) => w.is_active || w.is_focused)
+          if (activeWs) activeWsId = activeWs.id
+        }
+
+        anyExpanded = windows.some((w: any) => {
+          if (activeWsId !== null && w.workspace_id !== activeWsId) return false
+          if (w.is_floating) return false
+          if (w.layout?.tile_size) {
+            const [width] = w.layout.tile_size
+            return width / cachedMonitorWidth >= 0.8
+          }
+          return false
+        })
+      } catch {}
+    }
+
+    setHasExpandedWindow(anyExpanded)
   } catch {
     setFocusedWindow({
       title: "DESKTOP",
       appId: "",
       sizingState: "none",
     })
+    setHasExpandedWindow(false)
   }
 }
 
@@ -120,7 +157,7 @@ try {
 
 updateFocusedWindow()
 
-export { focusedWindow, updateFocusedWindow }
+export { focusedWindow, hasExpandedWindow, updateFocusedWindow }
 
 export function closeWindow() {
   execAsync("niri msg action close-window").catch(console.error)

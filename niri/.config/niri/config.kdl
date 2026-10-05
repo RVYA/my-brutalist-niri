@@ -97,6 +97,7 @@ layer-rule {
 window-rule {
     geometry-corner-radius 12
     clip-to-geometry true
+    open-maximized-to-edges false
 }
 
 window-rule {
@@ -240,7 +241,7 @@ binds {
 
     Mod+F { maximize-column; }
     Mod+Shift+F { fullscreen-window; }
-    Mod+M { maximize-window-to-edges; }
+    Mod+M { maximize-column; }
     Mod+Ctrl+F { expand-column-to-available-width; }
     Mod+C { center-column; }
     Mod+Ctrl+C { center-visible-columns; }
