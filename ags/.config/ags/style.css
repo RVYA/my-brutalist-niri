@@ -1,15 +1,11 @@
 @import "./style/colors.css";
 @import "./style/fonts.css";
 
-:root {
-  --font-sans: "Manrope", sans-serif;
-  --font-mono: "Space Mono", monospace;
-}
 
 * {
   all: unset;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: var(--font-size-sans);
   color: @color-inverse;
 }
 
@@ -105,8 +101,8 @@ window.modal-window-root {
 
 .verb-label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--font-size-mono);
+  font-weight: var(--font-weight-mono);
   text-transform: uppercase;
   letter-spacing: 1px;
   color: @color-accent;
@@ -115,7 +111,8 @@ window.modal-window-root {
 
 .title-label {
   font-family: var(--font-mono);
-  font-weight: 700;
+  font-size: var(--font-size-mono);
+  font-weight: var(--font-weight-mono);
   color: @color-inverse;
 }
 
@@ -125,8 +122,8 @@ window.modal-window-root {
 
 .clock-label {
   font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--font-size-mono);
+  font-weight: var(--font-weight-mono);
   color: @color-inverse;
   letter-spacing: 0.5px;
 }
@@ -690,45 +687,54 @@ window.modal-window-root {
   margin-top: 4px;
 }
 
-.filter-stepper-box {
-  background-color: alpha(@color-neutral, 0.12);
-  border: 1px solid alpha(@color-neutral, 0.3);
+.filter-stepper-box,
+.brutalist-stepper {
+  background-color: transparent;
+  border: 2px solid alpha(@color-neutral, 0.6);
   border-radius: 8px;
-  padding: 4px 8px;
+  min-height: 34px;
+  padding: 2px 4px;
+  transition: border-color 0.12s ease;
+}
+
+.filter-stepper-box:hover,
+.brutalist-stepper:hover {
+  border-color: @color-inverse;
 }
 
 .step-btn {
   font-family: var(--font-mono);
+  background: transparent;
   background-color: transparent;
-  border: 2px solid alpha(@color-neutral, 0.6);
-  border-radius: 8px;
+  border: none;
+  box-shadow: none;
+  border-radius: 6px;
   min-width: 28px;
   min-height: 28px;
   font-size: 14px;
-  font-weight: 700;
-  color: @color-inverse;
-  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  font-weight: 800;
+  color: @color-neutral;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .step-btn:hover {
   background-color: alpha(@color-inverse, 0.15);
-  border-color: @color-inverse;
   color: @color-inverse;
 }
 
 .step-btn:active {
-  background-color: @color-accent;
-  color: @color-obverse;
-  border-color: @color-accent;
+  background-color: alpha(@color-accent, 0.2);
+  color: @color-accent;
 }
 
 .step-value-label {
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 1px;
   color: @color-inverse;
-  min-width: 100px;
+  min-width: 64px;
+  padding: 0 8px;
 }
 
 .wallpaper-carousel-box {
@@ -963,28 +969,89 @@ scale slider {
 }
 
 dropdown.brutalist-dropdown {
+  background: transparent;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+
+dropdown.brutalist-dropdown > button {
+  background: transparent;
   background-color: transparent;
   border: 2px solid alpha(@color-neutral, 0.6);
   border-radius: 8px;
   min-height: 34px;
   padding: 2px 10px;
-  transition: background-color 0.12s ease, border-color 0.12s ease;
-}
-
-dropdown.brutalist-dropdown:hover {
-  background-color: alpha(@color-inverse, 0.15);
-  border-color: @color-inverse;
-}
-
-dropdown.brutalist-dropdown > button {
-  background: transparent;
-  border: none;
   box-shadow: none;
   color: @color-inverse;
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+dropdown.brutalist-dropdown > button label {
+  color: @color-inverse;
+  transition: color 0.12s ease;
+}
+
+dropdown.brutalist-dropdown > button:hover {
+  background-color: alpha(@color-inverse, 0.15);
+  border-color: @color-inverse;
+  color: @color-inverse;
+}
+
+dropdown.brutalist-dropdown > button:hover label {
+  color: @color-inverse;
+}
+
+dropdown.brutalist-dropdown > button:active {
+  background-color: alpha(@color-accent, 0.2);
+  border-color: @color-accent;
+  color: @color-accent;
+}
+
+dropdown.brutalist-dropdown > button:active label {
+  color: @color-accent;
+}
+
+dropdown.brutalist-dropdown > button:checked,
+dropdown.brutalist-dropdown > button:checked:hover {
+  background-color: @color-inverse;
+  border-color: @color-inverse;
+  color: @color-obverse;
+}
+
+dropdown.brutalist-dropdown > button:checked label,
+dropdown.brutalist-dropdown > button:checked:hover label,
+dropdown.brutalist-dropdown > button:checked cell,
+dropdown.brutalist-dropdown > button:checked:hover cell,
+dropdown.brutalist-dropdown > button:checked * {
+  color: @color-obverse;
+}
+
+dropdown.brutalist-dropdown arrow {
+  -gtk-icon-source: -gtk-icontheme("pan-down-symbolic");
+  min-width: 14px;
+  min-height: 14px;
+  margin-left: 6px;
+  color: @color-neutral;
+  transition: color 0.15s ease, transform 0.2s ease;
+}
+
+dropdown.brutalist-dropdown > button:hover arrow {
+  color: @color-inverse;
+}
+
+dropdown.brutalist-dropdown > button:active arrow {
+  color: @color-accent;
+}
+
+dropdown.brutalist-dropdown > button:checked arrow,
+dropdown.brutalist-dropdown > button:checked:hover arrow {
+  color: @color-obverse;
+  transform: rotate(180deg);
 }
 
 dropdown.brutalist-dropdown popover contents {
@@ -995,22 +1062,37 @@ dropdown.brutalist-dropdown popover contents {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+dropdown.brutalist-dropdown popover listview {
+  background-color: transparent;
+}
+
 dropdown.brutalist-dropdown popover listview row {
+  background-color: transparent;
+  color: @color-inverse;
   padding: 6px 12px;
   border-radius: 6px;
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
-  color: @color-inverse;
   transition: background-color 0.1s ease, color 0.1s ease;
 }
 
-dropdown.brutalist-dropdown popover listview row:hover {
-  background-color: alpha(@color-inverse, 0.15);
+dropdown.brutalist-dropdown popover listview row label {
+  color: @color-inverse;
 }
 
-dropdown.brutalist-dropdown popover listview row:selected {
+dropdown.brutalist-dropdown popover listview row:hover,
+dropdown.brutalist-dropdown popover listview row:focus,
+dropdown.brutalist-dropdown popover listview row:selected,
+dropdown.brutalist-dropdown popover listview row:active {
   background-color: @color-inverse;
+  color: @color-obverse;
+}
+
+dropdown.brutalist-dropdown popover listview row:hover label,
+dropdown.brutalist-dropdown popover listview row:focus label,
+dropdown.brutalist-dropdown popover listview row:selected label,
+dropdown.brutalist-dropdown popover listview row:active label {
   color: @color-obverse;
 }
 
