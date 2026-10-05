@@ -18,6 +18,8 @@ export interface FontFamilyInfo {
   path?: string
   is_variable: boolean
   axes: FontAxis[]
+  weights?: number[]
+  has_italic?: boolean
 }
 
 export interface FontRoleConfig {
@@ -53,6 +55,8 @@ export default function FontRoleEditor({
         family: fam,
         is_variable: false,
         axes: [],
+        weights: [400],
+        has_italic: true,
       }
     )
   }
@@ -121,6 +125,123 @@ export default function FontRoleEditor({
     const info = getFontInfo(family())
     const curAxes = { ...axes() }
     const hasVarWeight = info.axes.some((a) => a.tag === "wght")
+
+    const optionsFlow = new Gtk.FlowBox({
+      selection_mode: Gtk.SelectionMode.NONE,
+      orientation: Gtk.Orientation.HORIZONTAL,
+      column_spacing: 24,
+      row_spacing: 12,
+      hexpand: true,
+      css_classes: ["font-options-flow"],
+    })
+
+    let hasFlowOptions = false
+
+    if (!hasVarWeight) {
+      const weights = info.weights && info.weights.length > 0 ? info.weights : [400]
+      const weightCol = new Gtk.Box({
+        orientation: Gtk.Orientation.VERTICAL,
+        spacing: 6,
+        halign: Gtk.Align.START,
+      })
+      const weightLabel = new Gtk.Label({
+        label: "WEIGHT",
+        halign: Gtk.Align.START,
+        css_classes: ["font-section-label"],
+      })
+      weightCol.append(weightLabel)
+
+      if (weights.length <= 3) {
+        const weightRow = new Gtk.Box({ spacing: 6, valign: Gtk.Align.CENTER })
+        const weightButtons: Gtk.Button[] = []
+        weights.forEach((w) => {
+          const btn = new Gtk.Button({
+            label: `${w}`,
+            css_classes: weight() === w ? ["radio-btn", "active"] : ["radio-btn"],
+          })
+          btn.connect("clicked", () => {
+            setWeight(w)
+            weightButtons.forEach((b, idx) => {
+              if (weights[idx] === w) {
+                b.add_css_class("active")
+              } else {
+                b.remove_css_class("active")
+              }
+            })
+            notifyChange()
+          })
+          weightButtons.push(btn)
+          weightRow.append(btn)
+        })
+        weightCol.append(weightRow)
+      } else {
+        const weightStrs = weights.map((w) => `${w}`)
+        const weightDd = Gtk.DropDown.new_from_strings(weightStrs)
+        weightDd.add_css_class("brutalist-dropdown")
+        const curIdx = Math.max(0, weights.indexOf(weight()))
+        weightDd.set_selected(curIdx)
+        weightDd.connect("notify::selected", () => {
+          const item = weightDd.get_selected_item() as Gtk.StringObject
+          if (item) {
+            const w = Number(item.get_string())
+            if (!isNaN(w)) {
+              setWeight(w)
+              notifyChange()
+            }
+          }
+        })
+        weightCol.append(weightDd)
+      }
+      optionsFlow.append(weightCol)
+      hasFlowOptions = true
+    }
+
+    if (info.has_italic !== false) {
+      const styleCol = new Gtk.Box({
+        orientation: Gtk.Orientation.VERTICAL,
+        spacing: 6,
+        halign: Gtk.Align.START,
+      })
+      const styleLabel = new Gtk.Label({
+        label: "STYLE",
+        halign: Gtk.Align.START,
+        css_classes: ["font-section-label"],
+      })
+      styleCol.append(styleLabel)
+
+      const styleRow = new Gtk.Box({ spacing: 6, valign: Gtk.Align.CENTER })
+      const normalBtn = new Gtk.Button({
+        label: "NORMAL",
+        css_classes: slant() === 0 ? ["radio-btn", "active"] : ["radio-btn"],
+      })
+      const italicBtn = new Gtk.Button({
+        label: "ITALIC",
+        css_classes: slant() > 0 ? ["radio-btn", "active"] : ["radio-btn"],
+      })
+
+      normalBtn.connect("clicked", () => {
+        setSlant(0)
+        normalBtn.add_css_class("active")
+        italicBtn.remove_css_class("active")
+        notifyChange()
+      })
+      italicBtn.connect("clicked", () => {
+        setSlant(1)
+        italicBtn.add_css_class("active")
+        normalBtn.remove_css_class("active")
+        notifyChange()
+      })
+
+      styleRow.append(normalBtn)
+      styleRow.append(italicBtn)
+      styleCol.append(styleRow)
+      optionsFlow.append(styleCol)
+      hasFlowOptions = true
+    }
+
+    if (hasFlowOptions) {
+      featuresContainer.append(optionsFlow)
+    }
 
     if (info.is_variable && info.axes.length > 0) {
       const varSection = new Gtk.Box({
@@ -196,70 +317,6 @@ export default function FontRoleEditor({
       }
       featuresContainer.append(varSection)
     }
-
-    if (!hasVarWeight) {
-      const weightSection = new Gtk.Box({
-        orientation: Gtk.Orientation.VERTICAL,
-        spacing: 8,
-        css_classes: ["font-section"],
-      })
-      const weightLabel = new Gtk.Label({
-        label: "WEIGHT & STYLE",
-        halign: Gtk.Align.START,
-        css_classes: ["font-section-label"],
-      })
-      weightSection.append(weightLabel)
-
-      const weightRow = new Gtk.Box({ spacing: 8, valign: Gtk.Align.CENTER })
-      const weights = [
-        { label: "LIGHT", val: 300 },
-        { label: "REGULAR", val: 400 },
-        { label: "MEDIUM", val: 500 },
-        { label: "BOLD", val: 700 },
-      ]
-      const weightButtons: Gtk.Button[] = []
-
-      weights.forEach((w) => {
-        const btn = new Gtk.Button({
-          label: w.label,
-          css_classes: weight() === w.val ? ["radio-btn", "active"] : ["radio-btn"],
-        })
-        btn.connect("clicked", () => {
-          setWeight(w.val)
-          weightButtons.forEach((b, idx) => {
-            if (weights[idx].val === w.val) {
-              b.add_css_class("active")
-            } else {
-              b.remove_css_class("active")
-            }
-          })
-          notifyChange()
-        })
-        weightButtons.push(btn)
-        weightRow.append(btn)
-      })
-
-      const spacer = new Gtk.Box({ hexpand: true })
-      weightRow.append(spacer)
-
-      const italicBtn = new Gtk.Button({
-        label: "ITALIC",
-        css_classes: slant() > 0 ? ["radio-btn", "active"] : ["radio-btn"],
-      })
-      italicBtn.connect("clicked", () => {
-        const next = slant() > 0 ? 0 : 1
-        setSlant(next)
-        if (next > 0) {
-          italicBtn.add_css_class("active")
-        } else {
-          italicBtn.remove_css_class("active")
-        }
-        notifyChange()
-      })
-      weightRow.append(italicBtn)
-      weightSection.append(weightRow)
-      featuresContainer.append(weightSection)
-    }
   }
 
   const initialIndex = Math.max(
@@ -269,9 +326,11 @@ export default function FontRoleEditor({
 
   return (
     <box class="font-role-card" orientation={Gtk.Orientation.VERTICAL} spacing={14}>
-      <box class="font-section" orientation={Gtk.Orientation.VERTICAL} spacing={6}>
+      <box class="font-control-row" spacing={12} valign={Gtk.Align.CENTER}>
         <label class="font-section-label" label="TYPEFACE" halign={Gtk.Align.START} />
+        <box hexpand={true} />
         <box
+          valign={Gtk.Align.CENTER}
           $={(self: Gtk.Box) => {
             const fontNames = availableFonts.map((f) => f.family)
             const dd = Gtk.DropDown.new_from_strings(fontNames)
@@ -291,6 +350,13 @@ export default function FontRoleEditor({
                   if (newAxes["wght"]) {
                     setWeight(Math.round(newAxes["wght"]))
                   }
+                } else if (info.weights && info.weights.length > 0) {
+                  if (!info.weights.includes(weight())) {
+                    setWeight(info.weights[0])
+                  }
+                }
+                if (info.has_italic === false) {
+                  setSlant(0)
                 }
                 setAxes(newAxes)
                 rebuildFeatures()
@@ -302,9 +368,10 @@ export default function FontRoleEditor({
         />
       </box>
 
-      <box class="font-section" orientation={Gtk.Orientation.VERTICAL} spacing={6}>
+      <box class="font-control-row" spacing={12} valign={Gtk.Align.CENTER}>
         <label class="font-section-label" label="FONT SIZE" halign={Gtk.Align.START} />
-        <box class="filter-stepper-box" spacing={6} valign={Gtk.Align.CENTER} halign={Gtk.Align.START}>
+        <box hexpand={true} />
+        <box class="filter-stepper-box" spacing={6} valign={Gtk.Align.CENTER}>
           <button
             class="step-btn"
             label="−"
@@ -337,7 +404,7 @@ export default function FontRoleEditor({
 
       <box
         orientation={Gtk.Orientation.VERTICAL}
-        spacing={8}
+        spacing={10}
         $={(self: Gtk.Box) => {
           featuresContainer = self
           rebuildFeatures()

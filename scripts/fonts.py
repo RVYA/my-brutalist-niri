@@ -78,10 +78,21 @@ def inspect_family(family):
     path, detected_fam = get_font_file_and_family(family)
     axes = []
     is_var = False
-    if path and os.path.exists(path):
+    weights = set()
+    has_italic = False
+
+    p = subprocess.run(["fc-list", f":family={family}", "file"], capture_output=True, text=True)
+    file_paths = [line.split(":")[0].strip() for line in p.stdout.strip().split("\n") if line.strip()]
+    if path and path not in file_paths:
+        file_paths.append(path)
+
+    for fpath in file_paths:
+        if not fpath or not os.path.exists(fpath):
+            continue
         try:
-            ttf = TTFont(path)
-            if "fvar" in ttf:
+            is_ttc = fpath.lower().endswith(".ttc")
+            ttf = TTFont(fpath, fontNumber=0) if is_ttc else TTFont(fpath)
+            if "fvar" in ttf and not is_var:
                 is_var = True
                 for a in ttf["fvar"].axes:
                     axes.append({
@@ -92,14 +103,26 @@ def inspect_family(family):
                         "default": float(a.defaultValue),
                         "step": 1 if a.axisTag in ("wght", "wdth") else 0.1
                     })
+            if "OS/2" in ttf:
+                w = int(ttf["OS/2"].usWeightClass)
+                if w > 0:
+                    weights.add(w)
+                if ttf["OS/2"].fsSelection & 1:
+                    has_italic = True
+            if "post" in ttf and getattr(ttf["post"], "italicAngle", 0) != 0:
+                has_italic = True
         except Exception:
             pass
+
+    sorted_weights = sorted(list(weights)) if weights else [400]
     return {
         "family": family,
         "detected_family": detected_fam,
         "path": path,
         "is_variable": is_var,
-        "axes": axes
+        "axes": axes,
+        "weights": sorted_weights,
+        "has_italic": has_italic
     }
 
 def get_system_mono_families():

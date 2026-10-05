@@ -958,6 +958,25 @@ scale slider {
   padding: 4px 0;
 }
 
+.font-control-row {
+  padding: 2px 0;
+  min-height: 36px;
+}
+
+.font-control-row .font-section-label {
+  margin-bottom: 0;
+}
+
+flowbox.font-options-flow,
+flowbox.font-options-flow flowboxchild {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+
 .font-section-label {
   font-family: var(--font-mono);
   font-size: 10px;

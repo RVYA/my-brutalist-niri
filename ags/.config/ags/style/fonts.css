@@ -1,10 +1,10 @@
 :root {
   --font-sans: "Manrope", sans-serif;
   --font-mono: "Space Mono", monospace;
-  --font-size-sans: 13px;
-  --font-size-mono: 13px;
+  --font-size-sans: 14px;
+  --font-size-mono: 14px;
   --font-weight-sans: 400;
-  --font-weight-mono: 400;
+  --font-weight-mono: 700;
   --font-style-sans: normal;
   --font-style-mono: normal;
   --font-variation-sans: 'wght' 400;
