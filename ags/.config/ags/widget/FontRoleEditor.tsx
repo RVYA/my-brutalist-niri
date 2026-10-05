@@ -63,7 +63,7 @@ export default function FontRoleEditor({
     Gtk.StyleContext.add_provider_for_display(
       display,
       previewProvider,
-      Gtk.STYLE_PROVIDER_PRIORITY_USER
+      Gtk.STYLE_PROVIDER_PRIORITY_USER + 100
     )
   }
 
@@ -75,14 +75,14 @@ export default function FontRoleEditor({
             .join(", ")
         : "normal"
 
+    const fallback = role === "sans" ? "sans-serif" : "monospace"
     const styleStr = `
       .font-role-preview-${role} {
-        font-family: "${cfg.family}";
+        font-family: "${cfg.family}", ${fallback};
         font-size: ${cfg.size}px;
         font-weight: ${cfg.weight};
         font-style: ${cfg.slant > 0 ? "italic" : "normal"};
         font-variation-settings: ${varSettings};
-        color: @color-inverse;
       }
     `
     try {
@@ -307,7 +307,7 @@ export default function FontRoleEditor({
         <box class="filter-stepper-box" spacing={6} valign={Gtk.Align.CENTER} halign={Gtk.Align.START}>
           <button
             class="step-btn"
-            label="-"
+            label="−"
             onClicked={() => {
               const step = role === "terminal" ? 0.5 : 1
               const val = Math.max(8, Number((size() - step).toFixed(1)))
@@ -346,7 +346,11 @@ export default function FontRoleEditor({
 
       <box class="font-section preview-section" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
         <label class="font-section-label" label="PREVIEW" halign={Gtk.Align.START} />
-        <box class="font-preview-box" orientation={Gtk.Orientation.VERTICAL} spacing={6}>
+        <box
+          class="font-preview-box"
+          orientation={Gtk.Orientation.VERTICAL}
+          spacing={6}
+        >
           <label
             class={`font-preview-line font-role-preview-${role}`}
             label="The quick brown fox jumps over the lazy dog"

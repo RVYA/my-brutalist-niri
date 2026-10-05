@@ -1,3 +1,4 @@
+import app from "ags/gtk4/app"
 import { Gtk, Gdk } from "ags/gtk4"
 import { createState, createComputed } from "gnim"
 import GLib from "gi://GLib"
@@ -205,6 +206,26 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
   const [terminalOpen, setTerminalOpen] = createState(false)
   const [fontsConfig, setFontsConfig] = createState<Record<string, FontRoleConfig>>(initialFonts.current)
 
+  function reloadAppCss() {
+    try {
+      const style = `${GLib.getenv("HOME")}/.config/ags/style.css`
+      const colors = `${GLib.getenv("HOME")}/.config/ags/style/colors.css`
+      const fonts = `${GLib.getenv("HOME")}/.config/ags/style/fonts.css`
+      const [, colorsData] = GLib.file_get_contents(colors)
+      let fontsText = ""
+      try {
+        const [, fontsData] = GLib.file_get_contents(fonts)
+        fontsText = new TextDecoder().decode(fontsData)
+      } catch {}
+      const [, styleData] = GLib.file_get_contents(style)
+      const colorsText = new TextDecoder().decode(colorsData)
+      const rawStyle = new TextDecoder().decode(styleData)
+      const cleanedStyle = rawStyle.replace(/@import\s+[^;]+;/g, "")
+      const cssText = colorsText + "\n" + cleanedStyle + "\n" + fontsText
+      app.apply_css(cssText, true)
+    } catch {}
+  }
+
   let fontSaveTimeoutId: number | null = null
   const applyAndSaveFonts = (newFontsConfig: Record<string, FontRoleConfig>) => {
     if (fontSaveTimeoutId) {
@@ -213,7 +234,7 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
     fontSaveTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
       fontSaveTimeoutId = null
       try {
-        Gio.Subprocess.new(
+        const proc = Gio.Subprocess.new(
           [
             "/usr/bin/python3",
             `${GLib.getenv("HOME")}/dotfiles/scripts/fonts.py`,
@@ -222,6 +243,12 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
           ],
           Gio.SubprocessFlags.NONE
         )
+        proc.wait_async(null, (source, res) => {
+          try {
+            source.wait_finish(res)
+            reloadAppCss()
+          } catch {}
+        })
       } catch (e) {
         console.error("Failed to apply fonts:", e)
       }

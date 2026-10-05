@@ -20,17 +20,27 @@
 }
 
 .topbar-pill,
+.title-label,
+.clock-label,
+.verb-label,
 .modal-title,
 .brutalist-btn,
 .radio-btn,
 .section-title,
+.collapsible-title,
 .slider-hint,
 .clock-time,
 .accent-slider-val,
 .slider-val,
 .theme-nav-item,
-.category-section-title {
+.category-section-title,
+.font-section-label,
+.step-btn,
+.step-value-label,
+dropdown.brutalist-dropdown > button,
+dropdown.brutalist-dropdown popover listview row {
   font-family: var(--font-mono);
+  font-size: var(--font-size-mono);
   font-weight: var(--font-weight-mono);
   font-style: var(--font-style-mono);
   font-variation-settings: var(--font-variation-mono);

@@ -22,7 +22,7 @@ function reloadCss() {
     const colorsText = new TextDecoder().decode(colorsData)
     const rawStyle = new TextDecoder().decode(styleData)
     const cleanedStyle = rawStyle.replace(/@import\s+[^;]+;/g, "")
-    const cssText = colorsText + "\n" + fontsText + "\n" + cleanedStyle
+    const cssText = colorsText + "\n" + cleanedStyle + "\n" + fontsText
     app.apply_css(cssText, true)
   } catch {
     app.apply_css(style, true)

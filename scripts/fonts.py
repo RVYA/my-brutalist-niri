@@ -198,17 +198,27 @@ def generate_css(fonts_config):
 }}
 
 .topbar-pill,
+.title-label,
+.clock-label,
+.verb-label,
 .modal-title,
 .brutalist-btn,
 .radio-btn,
 .section-title,
+.collapsible-title,
 .slider-hint,
 .clock-time,
 .accent-slider-val,
 .slider-val,
 .theme-nav-item,
-.category-section-title {{
+.category-section-title,
+.font-section-label,
+.step-btn,
+.step-value-label,
+dropdown.brutalist-dropdown > button,
+dropdown.brutalist-dropdown popover listview row {{
   font-family: var(--font-mono);
+  font-size: var(--font-size-mono);
   font-weight: var(--font-weight-mono);
   font-style: var(--font-style-mono);
   font-variation-settings: var(--font-variation-mono);
@@ -231,6 +241,7 @@ def update_kitty_conf(term_config):
 
         with open(KITTY_CONF, "w") as f:
             f.write(new_content)
+        subprocess.run(["pkill", "-SIGUSR1", "kitty"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
         sys.stderr.write(f"Failed to update kitty.conf: {e}\n")
 
@@ -243,11 +254,13 @@ def apply_config(fonts_config):
         except Exception:
             theme_data = {}
 
-    theme_data["fonts"] = fonts_config
+    cur_fonts = load_saved_config()
+    cur_fonts.update(fonts_config)
+    theme_data["fonts"] = cur_fonts
     with open(THEME_JSON, "w") as f:
         json.dump(theme_data, f, indent=2)
 
-    css = generate_css(fonts_config)
+    css = generate_css(cur_fonts)
     for p in (FONTS_CSS_USER, FONTS_CSS_REPO):
         try:
             os.makedirs(os.path.dirname(p), exist_ok=True)
@@ -256,8 +269,8 @@ def apply_config(fonts_config):
         except Exception:
             pass
 
-    if "terminal" in fonts_config:
-        update_kitty_conf(fonts_config["terminal"])
+    if "terminal" in cur_fonts:
+        update_kitty_conf(cur_fonts["terminal"])
 
     subprocess.run(["ags", "request", "reload-css"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
