@@ -107,13 +107,68 @@ export default function TopBar(gdkmonitor: Gdk.Monitor) {
     </window>
   ) as Astal.Window
 
+  let currentWidth = 0
+  let tickId: number | null = null
+
+  function animateToWidth(pillBox: Gtk.Box, targetWidth: number) {
+    if (currentWidth === 0) {
+      currentWidth = targetWidth
+      win.set_default_size(targetWidth, -1)
+      return
+    }
+
+    if (Math.abs(currentWidth - targetWidth) < 2) {
+      currentWidth = targetWidth
+      win.set_default_size(targetWidth, -1)
+      pillBox.set_size_request(-1, -1)
+      return
+    }
+
+    if (tickId !== null) {
+      win.remove_tick_callback(tickId)
+      tickId = null
+    }
+
+    const startW = currentWidth
+    const diff = targetWidth - startW
+    let startTime: number | null = null
+    const duration = 200000 // 200ms
+
+    tickId = win.add_tick_callback((_, frameClock) => {
+      const now = frameClock.get_frame_time()
+      if (startTime === null) {
+        startTime = now
+        return GLib.SOURCE_CONTINUE
+      }
+
+      const elapsed = now - startTime
+      const progress = Math.min(1.0, elapsed / duration)
+      const eased = 1.0 - Math.pow(1.0 - progress, 3)
+      const curr = Math.round(startW + diff * eased)
+      currentWidth = curr
+
+      pillBox.set_size_request(curr, -1)
+      win.set_default_size(curr, -1)
+
+      if (progress >= 1.0) {
+        currentWidth = targetWidth
+        pillBox.set_size_request(-1, -1)
+        win.set_default_size(targetWidth, -1)
+        tickId = null
+        return GLib.SOURCE_REMOVE
+      }
+
+      return GLib.SOURCE_CONTINUE
+    })
+  }
+
   createEffect(() => {
     focusedWindow()
     const pillBox = win.get_child() as Gtk.Box | null
     if (pillBox) {
       const [, natW] = pillBox.measure(Gtk.Orientation.HORIZONTAL, -1)
       const targetWidth = Math.min(natW, maxAllowedWidth)
-      win.set_default_size(targetWidth, -1)
+      animateToWidth(pillBox, targetWidth)
     }
   })
 
