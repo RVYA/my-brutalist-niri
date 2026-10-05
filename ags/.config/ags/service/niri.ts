@@ -1,34 +1,13 @@
 import { createState } from "gnim"
 import { execAsync, subprocess } from "ags/process"
 
+export type WindowSizingState = "expanded" | "half" | "quarter" | "none"
+
 export interface FocusedWindow {
   id?: number
   title: string
   appId: string
-  verb: string
-}
-
-function getVerbForApp(appId: string): string {
-  const id = appId.toLowerCase()
-  if (id.includes("code") || id.includes("zed") || id.includes("nvim") || id.includes("vim") || id.includes("emacs") || id.includes("kate") || id.includes("gedit") || id.includes("sublime")) {
-    return "CODING"
-  }
-  if (id.includes("firefox") || id.includes("zen") || id.includes("chrome") || id.includes("brave") || id.includes("floorp") || id.includes("browser") || id.includes("librewolf")) {
-    return "BROWSING"
-  }
-  if (id.includes("terminal") || id.includes("alacritty") || id.includes("kitty") || id.includes("foot") || id.includes("wezterm") || id.includes("ghostty")) {
-    return "HACKING"
-  }
-  if (id.includes("spotify") || id.includes("mpv") || id.includes("vlc")) {
-    return "PLAYING"
-  }
-  if (id.includes("bird") || id.includes("thunderbird") || id.includes("discord") || id.includes("telegram") || id.includes("slack")) {
-    return "CHATTING"
-  }
-  if (id.includes("steam") || id.includes("lutris") || id.includes("heroic")) {
-    return "GAMING"
-  }
-  return ""
+  sizingState: WindowSizingState
 }
 
 function cleanTitle(rawTitle: string, appId: string): string {
@@ -55,10 +34,29 @@ function cleanTitle(rawTitle: string, appId: string): string {
   return t
 }
 
+let cachedMonitorWidth = 1366
+let cachedMonitorHeight = 768
+
+async function updateMonitorDimensions() {
+  try {
+    const rawOutputs = await execAsync("niri msg --json outputs")
+    if (rawOutputs) {
+      const outputs = JSON.parse(rawOutputs)
+      const first = Object.values(outputs)[0] as any
+      if (first?.logical?.width && first?.logical?.height) {
+        cachedMonitorWidth = first.logical.width
+        cachedMonitorHeight = first.logical.height
+      }
+    }
+  } catch {}
+}
+
+updateMonitorDimensions()
+
 const [focusedWindow, setFocusedWindow] = createState<FocusedWindow>({
   title: "DESKTOP",
   appId: "",
-  verb: "",
+  sizingState: "none",
 })
 
 async function updateFocusedWindow() {
@@ -68,7 +66,7 @@ async function updateFocusedWindow() {
       setFocusedWindow({
         title: "DESKTOP",
         appId: "",
-        verb: "",
+        sizingState: "none",
       })
       return
     }
@@ -76,18 +74,32 @@ async function updateFocusedWindow() {
     const appId = data.app_id || ""
     const rawTitle = data.title || ""
     const title = cleanTitle(rawTitle, appId)
-    const verb = getVerbForApp(appId)
+
+    let sizingState: WindowSizingState = "half"
+    if (data.layout?.tile_size) {
+      const [w, h] = data.layout.tile_size
+      const widthRatio = w / cachedMonitorWidth
+      const heightRatio = h / cachedMonitorHeight
+      if (widthRatio >= 0.8) {
+        sizingState = "expanded"
+      } else if (heightRatio <= 0.65) {
+        sizingState = "quarter"
+      } else {
+        sizingState = "half"
+      }
+    }
+
     setFocusedWindow({
       id: data.id,
       title,
       appId,
-      verb,
+      sizingState,
     })
   } catch {
     setFocusedWindow({
       title: "DESKTOP",
       appId: "",
-      verb: "",
+      sizingState: "none",
     })
   }
 }
@@ -114,10 +126,14 @@ export function closeWindow() {
   execAsync("niri msg action close-window").catch(console.error)
 }
 
-export function toggleColumnWidth() {
-  execAsync("niri msg action switch-preset-column-width").catch(console.error)
+export function expandWindow() {
+  execAsync("niri msg action set-column-width 100% && niri msg action reset-window-height").catch(console.error)
 }
 
-export function fullscreenWindow() {
-  execAsync("niri msg action fullscreen-window").catch(console.error)
+export function shrinkToHalfWindow() {
+  execAsync("niri msg action set-column-width 50% && niri msg action reset-window-height").catch(console.error)
+}
+
+export function shrinkToQuarterWindow() {
+  execAsync("niri msg action set-column-width 50% && niri msg action set-window-height 50%").catch(console.error)
 }

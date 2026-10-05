@@ -6,27 +6,43 @@ import GLib from "gi://GLib"
 import {
   focusedWindow,
   closeWindow,
-  toggleColumnWidth,
-  fullscreenWindow,
+  expandWindow,
+  shrinkToHalfWindow,
+  shrinkToQuarterWindow,
 } from "../service/niri"
 
 function WindowControls() {
+  const sizingState = createComputed(() => focusedWindow().sizingState)
+  const hasWindow = createComputed(() => focusedWindow().sizingState !== "none")
+
+  const canExpand = createComputed(() => sizingState() === "half")
+  const canShrinkToHalf = createComputed(() => sizingState() === "expanded" || sizingState() === "quarter")
+  const canShrinkToQuarter = createComputed(() => sizingState() === "half")
+
   return (
-    <box class="window-controls" spacing={6} valign={Gtk.Align.CENTER}>
+    <box class="window-controls" spacing={6} valign={Gtk.Align.CENTER} visible={hasWindow}>
       <button
         class="window-btn btn-close"
-        tooltipText="Close"
+        tooltipText="Close Window"
         onClicked={closeWindow}
       />
       <button
-        class="window-btn btn-minimize"
-        tooltipText="Toggle Width"
-        onClicked={toggleColumnWidth}
+        class="window-btn btn-expand"
+        tooltipText="Expand to Fill"
+        visible={canExpand}
+        onClicked={expandWindow}
       />
       <button
-        class="window-btn btn-maximize"
-        tooltipText="Fullscreen"
-        onClicked={fullscreenWindow}
+        class="window-btn btn-half"
+        tooltipText="Shrink to Half"
+        visible={canShrinkToHalf}
+        onClicked={shrinkToHalfWindow}
+      />
+      <button
+        class="window-btn btn-quarter"
+        tooltipText="Shrink to Quarter"
+        visible={canShrinkToQuarter}
+        onClicked={shrinkToQuarterWindow}
       />
     </box>
   )

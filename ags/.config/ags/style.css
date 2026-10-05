@@ -62,25 +62,35 @@ window.modal-window-root {
   min-width: 12px;
   min-height: 12px;
   border-radius: 9999px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  transition: transform 0.15s ease, filter 0.15s ease;
+  padding: 0;
+  margin: 0;
+  transition: transform 0.15s ease, filter 0.15s ease, background-color 0.15s ease;
+  background-color: @color-neutral;
 }
 
 .window-btn:hover {
-  filter: brightness(1.2);
-  transform: scale(1.1);
+  background-color: @color-accent;
+  transform: scale(1.15);
+}
+
+.window-btn:active {
+  background-color: @color-inverse;
+  transform: scale(0.95);
 }
 
 .btn-close {
   background-color: @color-error;
 }
 
-.btn-minimize {
-  background-color: @color-warn;
+.btn-close:hover {
+  background-color: @color-error;
+  filter: brightness(1.25);
+  transform: scale(1.15);
 }
 
-.btn-maximize {
-  background-color: @color-success;
+.btn-close:active {
+  background-color: @color-inverse;
+  transform: scale(0.95);
 }
 
 .separator {
