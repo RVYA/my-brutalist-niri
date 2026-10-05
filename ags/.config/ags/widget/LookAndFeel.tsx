@@ -153,6 +153,27 @@ function loadInitialFonts(): {
   }
   current: Record<string, FontRoleConfig>
 } {
+  const cachePath = `${GLib.getenv("HOME")}/.cache/ags/fonts-cache.json`
+  try {
+    if (GLib.file_test(cachePath, GLib.FileTest.EXISTS)) {
+      const [, data] = GLib.file_get_contents(cachePath)
+      if (data) {
+        const parsed = JSON.parse(new TextDecoder().decode(data))
+        if (parsed?.roles) {
+          const themeJson = `${GLib.getenv("HOME")}/.config/ags/theme.json`
+          try {
+            const [, tData] = GLib.file_get_contents(themeJson)
+            const t = JSON.parse(new TextDecoder().decode(tData))
+            if (t?.fonts) {
+              parsed.current = { ...defaultFontRoles, ...t.fonts }
+            }
+          } catch {}
+          return parsed
+        }
+      }
+    }
+  } catch {}
+
   try {
     const [, stdout] = GLib.spawn_command_line_sync(
       `/usr/bin/python3 ${GLib.getenv("HOME")}/dotfiles/scripts/fonts.py list`

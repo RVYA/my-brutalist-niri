@@ -149,9 +149,21 @@ def is_font_installed(family):
     p = subprocess.run(["fc-list", f":family={family}", "file"], capture_output=True, text=True)
     return bool(p.stdout.strip())
 
-def list_fonts():
+FONTS_CACHE_FILE = os.path.expanduser("~/.cache/ags/fonts-cache.json")
+
+def list_fonts(force_refresh=False):
     current_config = load_saved_config()
     
+    if not force_refresh and os.path.exists(FONTS_CACHE_FILE):
+        try:
+            with open(FONTS_CACHE_FILE, "r") as f:
+                cached = json.load(f)
+                if "roles" in cached:
+                    cached["current"] = current_config
+                    return cached
+        except Exception:
+            pass
+
     sans_list = []
     for fam in CURATED_SANS:
         if is_font_installed(fam):
@@ -162,7 +174,7 @@ def list_fonts():
         if is_font_installed(fam):
             mono_list.append(inspect_family(fam))
 
-    return {
+    result = {
         "roles": {
             "sans": sans_list,
             "mono": mono_list,
@@ -170,6 +182,15 @@ def list_fonts():
         },
         "current": current_config
     }
+
+    try:
+        os.makedirs(os.path.dirname(FONTS_CACHE_FILE), exist_ok=True)
+        with open(FONTS_CACHE_FILE, "w") as f:
+            json.dump(result, f, indent=2)
+    except Exception:
+        pass
+
+    return result
 
 def load_saved_config():
     if os.path.exists(THEME_JSON):
@@ -220,10 +241,16 @@ def generate_css(fonts_config):
   font-variation-settings: var(--font-variation-sans);
 }}
 
+.title-label {{
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sans);
+  font-weight: var(--font-weight-sans);
+  font-style: var(--font-style-sans);
+  font-variation-settings: var(--font-variation-sans);
+}}
+
 .topbar-pill,
-.title-label,
 .clock-label,
-.verb-label,
 .modal-title,
 .brutalist-btn,
 .radio-btn,

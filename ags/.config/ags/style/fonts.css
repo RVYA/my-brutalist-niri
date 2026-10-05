@@ -19,10 +19,16 @@
   font-variation-settings: var(--font-variation-sans);
 }
 
+.title-label {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sans);
+  font-weight: var(--font-weight-sans);
+  font-style: var(--font-style-sans);
+  font-variation-settings: var(--font-variation-sans);
+}
+
 .topbar-pill,
-.title-label,
 .clock-label,
-.verb-label,
 .modal-title,
 .brutalist-btn,
 .radio-btn,
