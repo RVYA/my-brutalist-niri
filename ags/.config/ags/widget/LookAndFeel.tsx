@@ -8,6 +8,7 @@ import ModalDialog from "./ModalDialog"
 import BrutalistButton from "./BrutalistButton"
 import CollapsibleSection from "./CollapsibleSection"
 import FontRoleEditor, { FontFamilyInfo, FontRoleConfig } from "./FontRoleEditor"
+import Tooltip from "./Tooltip"
 
 export const [isLookAndFeelVisible, setIsLookAndFeelVisible] = createState(false)
 export const [activeSubmenu, setActiveSubmenu] = createState<"theme" | "wallpaper" | "typefaces" | null>(null)
@@ -979,16 +980,17 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
         <label class="theme-sub-label" label="COLOR RELATIONSHIP" halign={Gtk.Align.START} />
         <box spacing={6}>
           {relationOptions.map((opt) => (
-            <button
-              class={createComputed(() =>
-                activeRelation() === opt.value
-                  ? "radio-btn active"
-                  : "radio-btn"
-              )}
-              label={opt.label}
-              tooltipText={opt.desc}
-              onClicked={() => applyRelation(opt.value)}
-            />
+            <Tooltip text={opt.desc} position="top">
+              <button
+                class={createComputed(() =>
+                  activeRelation() === opt.value
+                    ? "radio-btn active"
+                    : "radio-btn"
+                )}
+                label={opt.label}
+                onClicked={() => applyRelation(opt.value)}
+              />
+            </Tooltip>
           ))}
         </box>
       </box>
@@ -996,11 +998,12 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
       <box class="theme-section-card" orientation={Gtk.Orientation.VERTICAL} spacing={10}>
         <label class="theme-sub-label" label="ACCENT COLOR" halign={Gtk.Align.START} />
         <box spacing={12} valign={Gtk.Align.CENTER}>
-          <button
-            class="accent-current-swatch"
-            tooltipText="Click to toggle custom color tuner"
-            onClicked={() => setAccentPickerOpen(!accentPickerOpen())}
-          />
+          <Tooltip text="Click to toggle custom color tuner" position="top">
+            <button
+              class="accent-current-swatch"
+              onClicked={() => setAccentPickerOpen(!accentPickerOpen())}
+            />
+          </Tooltip>
           <label
             class="palette-tile-hex"
             label={(palette().accent || "").toUpperCase()}
@@ -1020,17 +1023,18 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
             valign={Gtk.Align.CENTER}
             onClicked={() => setAccentPickerOpen(!accentPickerOpen())}
           />
-          <button
-            class={createComputed(() =>
-              (palette().custom_accent || "auto") === "auto"
-                ? "radio-btn active"
-                : "radio-btn"
-            )}
-            label="AUTO / SYNC"
-            tooltipText="Automatically derive accent color from wallpaper"
-            valign={Gtk.Align.CENTER}
-            onClicked={() => applyAccent("auto")}
-          />
+          <Tooltip text="Automatically derive accent color from wallpaper" position="top">
+            <button
+              class={createComputed(() =>
+                (palette().custom_accent || "auto") === "auto"
+                  ? "radio-btn active"
+                  : "radio-btn"
+              )}
+              label="AUTO / SYNC"
+              valign={Gtk.Align.CENTER}
+              onClicked={() => applyAccent("auto")}
+            />
+          </Tooltip>
         </box>
 
         <revealer revealChild={accentPickerOpen} transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}>
@@ -1173,10 +1177,9 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
               "error",
               "success",
             ] as const).map((key) => (
-              <box
-                class={`theme-nav-circle theme-nav-circle-${key}`}
-                tooltipText={key.toUpperCase()}
-              />
+              <Tooltip text={key.toUpperCase()} position="top">
+                <box class={`theme-nav-circle theme-nav-circle-${key}`} />
+              </Tooltip>
             ))}
           </box>
         </BrutalistButton>

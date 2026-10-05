@@ -2,6 +2,7 @@ import { Gtk } from "ags/gtk4"
 import { createState, createComputed, Accessor } from "gnim"
 import GLib from "gi://GLib"
 import Gio from "gi://Gio"
+import { attachTooltip, TooltipPosition } from "./Tooltip"
 
 export interface BrutalistButtonProps {
   label?: string | Accessor<string>
@@ -9,6 +10,8 @@ export interface BrutalistButtonProps {
   active?: boolean | Accessor<boolean>
   onClicked?: () => void
   tooltipText?: string
+  tooltipPosition?: TooltipPosition
+  tooltipShortcut?: string
   hexpand?: boolean
   halign?: Gtk.Align
   children?: any
@@ -26,6 +29,8 @@ export default function BrutalistButton({
   active,
   onClicked,
   tooltipText,
+  tooltipPosition,
+  tooltipShortcut,
   hexpand,
   halign,
   children,
@@ -140,12 +145,19 @@ export default function BrutalistButton({
   return (
     <button
       class={`brutalist-btn${isAct() ? " active" : ""}${extraClass ? ` ${extraClass}` : ""}`}
-      tooltipText={tooltipText}
       hexpand={hexpand}
       halign={halign}
       onClicked={onClicked}
       $={(self: Gtk.Button) => {
         buttonRef = self
+
+        if (tooltipText) {
+          attachTooltip(self, {
+            text: tooltipText,
+            position: tooltipPosition,
+            shortcut: tooltipShortcut,
+          })
+        }
 
         self.connect("map", () => {
           if (shouldExpand()) {

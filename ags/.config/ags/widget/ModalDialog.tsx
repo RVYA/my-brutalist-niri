@@ -3,6 +3,7 @@ import { Astal, Gtk, Gdk } from "ags/gtk4"
 import { createComputed } from "gnim"
 import GLib from "gi://GLib"
 import BrutalistButton from "./BrutalistButton"
+import Tooltip from "./Tooltip"
 
 interface ModalDialogProps {
   name: string
@@ -134,11 +135,12 @@ export default function ModalDialog({
             >
               <box class="modal-header" spacing={12} valign={Gtk.Align.CENTER}>
                 <box class="modal-header-left" valign={Gtk.Align.CENTER}>
-                  <button
-                    class="window-btn btn-close"
-                    tooltipText="Close"
-                    onClicked={onClose}
-                  />
+                  <Tooltip text="CLOSE" position="bottom">
+                    <button
+                      class="window-btn btn-close"
+                      onClicked={onClose}
+                    />
+                  </Tooltip>
                 </box>
                 <label
                   class="modal-title"
