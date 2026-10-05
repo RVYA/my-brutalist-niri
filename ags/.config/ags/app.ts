@@ -4,7 +4,7 @@ import GLib from "gi://GLib"
 import Gio from "gi://Gio"
 import TopBar from "./widget/TopBar"
 import TrayPill from "./widget/TrayPill"
-import LookAndFeel, { toggleLookAndFeel, setActiveSubmenu } from "./widget/LookAndFeel"
+import LookAndFeel, { toggleLookAndFeel, setActiveSubmenu, openSubmenu } from "./widget/LookAndFeel"
 
 const style = `${GLib.getenv("HOME")}/.config/ags/style.css`
 const colors = `${GLib.getenv("HOME")}/.config/ags/style/colors.css`
@@ -77,17 +77,20 @@ app.start({
       toggleLookAndFeel()
       res("look-and-feel toggled")
     } else if (cmd.includes("submenu-theme")) {
-      setActiveSubmenu("theme")
+      openSubmenu("theme")
       res("theme submenu opened")
     } else if (cmd.includes("submenu-wallpaper")) {
-      setActiveSubmenu("wallpaper")
+      openSubmenu("wallpaper")
       res("wallpaper submenu opened")
     } else if (cmd.includes("submenu-typefaces")) {
-      setActiveSubmenu("typefaces")
+      openSubmenu("typefaces")
       res("typefaces submenu opened")
     } else if (cmd.includes("submenu-close")) {
       setActiveSubmenu(null)
       res("submenu closed")
+    } else if (cmd.includes("quit")) {
+      res("quitting")
+      app.quit()
     } else {
       res("unknown command")
     }

@@ -5,10 +5,18 @@ import Gio from "gi://Gio"
 import GdkPixbuf from "gi://GdkPixbuf"
 import ModalDialog from "./ModalDialog"
 import BrutalistButton from "./BrutalistButton"
+import CollapsibleSection from "./CollapsibleSection"
 import FontRoleEditor, { FontFamilyInfo, FontRoleConfig } from "./FontRoleEditor"
 
 export const [isLookAndFeelVisible, setIsLookAndFeelVisible] = createState(false)
 export const [activeSubmenu, setActiveSubmenu] = createState<"theme" | "wallpaper" | "typefaces" | null>(null)
+
+export function openSubmenu(menu: "theme" | "wallpaper" | "typefaces" | null) {
+  if (menu !== null) {
+    setIsLookAndFeelVisible(true)
+  }
+  setActiveSubmenu(menu)
+}
 
 export function toggleLookAndFeel() {
   setIsLookAndFeelVisible(!isLookAndFeelVisible())
@@ -718,66 +726,44 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
   ) as Gtk.Box
 
   const typefacesPage = (
-    <box class="typefaces-page-box" orientation={Gtk.Orientation.VERTICAL} spacing={16}>
-      <box class="collapsible-section" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
-        <button
-          class="section-header-btn"
-          onClicked={() => setHeadersOpen(!headersOpen())}
-        >
-          <box spacing={10} valign={Gtk.Align.CENTER}>
-            <label class="section-title" label="HEADERS" hexpand xalign={0} />
-            <label
-              class="section-arrow"
-              label={createComputed(() => (headersOpen() ? "▾" : "▸"))}
-            />
-          </box>
-        </button>
-        <revealer revealChild={headersOpen} transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}>
-          <box class="section-content" orientation={Gtk.Orientation.VERTICAL} spacing={10}>
-            {headersEditor}
-          </box>
-        </revealer>
-      </box>
+    <box class="typefaces-page-box" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
+      <CollapsibleSection
+        title="HEADERS"
+        open={headersOpen}
+        onToggle={() => setHeadersOpen(!headersOpen())}
+      >
+        {headersEditor}
+      </CollapsibleSection>
 
-      <box class="collapsible-section" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
-        <button
-          class="section-header-btn"
-          onClicked={() => setBodyOpen(!bodyOpen())}
-        >
-          <box spacing={10} valign={Gtk.Align.CENTER}>
-            <label class="section-title" label="BODY" hexpand xalign={0} />
-            <label
-              class="section-arrow"
-              label={createComputed(() => (bodyOpen() ? "▾" : "▸"))}
-            />
-          </box>
-        </button>
-        <revealer revealChild={bodyOpen} transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}>
-          <box class="section-content" orientation={Gtk.Orientation.VERTICAL} spacing={10}>
-            {bodyEditor}
-          </box>
-        </revealer>
-      </box>
+      <revealer
+        revealChild={createComputed(() => !headersOpen() && !bodyOpen())}
+        transitionType={Gtk.RevealerTransitionType.CROSSFADE}
+      >
+        <box class="collapsible-divider" />
+      </revealer>
 
-      <box class="collapsible-section" orientation={Gtk.Orientation.VERTICAL} spacing={8}>
-        <button
-          class="section-header-btn"
-          onClicked={() => setTerminalOpen(!terminalOpen())}
-        >
-          <box spacing={10} valign={Gtk.Align.CENTER}>
-            <label class="section-title" label="TERMINAL" hexpand xalign={0} />
-            <label
-              class="section-arrow"
-              label={createComputed(() => (terminalOpen() ? "▾" : "▸"))}
-            />
-          </box>
-        </button>
-        <revealer revealChild={terminalOpen} transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}>
-          <box class="section-content" orientation={Gtk.Orientation.VERTICAL} spacing={10}>
-            {terminalEditor}
-          </box>
-        </revealer>
-      </box>
+      <CollapsibleSection
+        title="BODY"
+        open={bodyOpen}
+        onToggle={() => setBodyOpen(!bodyOpen())}
+      >
+        {bodyEditor}
+      </CollapsibleSection>
+
+      <revealer
+        revealChild={createComputed(() => !bodyOpen() && !terminalOpen())}
+        transitionType={Gtk.RevealerTransitionType.CROSSFADE}
+      >
+        <box class="collapsible-divider" />
+      </revealer>
+
+      <CollapsibleSection
+        title="TERMINAL"
+        open={terminalOpen}
+        onToggle={() => setTerminalOpen(!terminalOpen())}
+      >
+        {terminalEditor}
+      </CollapsibleSection>
     </box>
   ) as Gtk.Box
 

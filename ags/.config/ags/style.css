@@ -527,30 +527,85 @@ window.modal-window-root {
   padding: 10px 14px;
 }
 
-.section-header-btn {
+.collapsible-section {
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 4px 8px;
+  transition: border-color 0.2s ease, padding 0.2s ease;
+}
+
+.collapsible-section.expanded {
+  border: 2px solid @color-inverse;
+  padding: 10px 12px;
+}
+
+.collapsible-divider {
+  min-height: 2px;
+  background-color: @color-neutral;
+  margin: 4px 8px;
+}
+
+.collapsible-header-btn {
   background: transparent;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
   padding: 4px 0;
 }
 
-.section-header-btn:hover .section-title {
+.collapsible-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: @color-neutral;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.collapsible-arrow-box {
+  min-width: 18px;
+  min-height: 18px;
+}
+
+.collapsible-arrow {
+  color: @color-neutral;
+  transform: rotate(90deg);
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), color 0.15s ease;
+}
+
+.collapsible-header-btn:hover .collapsible-title {
+  color: @color-accent;
+  border-bottom-color: @color-accent;
+}
+
+.collapsible-header-btn:hover .collapsible-arrow {
   color: @color-accent;
 }
 
-.section-title {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: @color-neutral;
+.collapsible-section.expanded .collapsible-title {
+  color: @color-inverse;
+  border-bottom-color: @color-inverse;
 }
 
-.section-arrow {
-  font-size: 11px;
-  color: @color-neutral;
+.collapsible-section.expanded .collapsible-arrow {
+  color: @color-inverse;
+  transform: rotate(270deg);
 }
 
-.section-content {
+.collapsible-section.expanded .collapsible-header-btn:hover .collapsible-title {
+  color: @color-accent;
+  border-bottom-color: @color-accent;
+}
+
+.collapsible-section.expanded .collapsible-header-btn:hover .collapsible-arrow {
+  color: @color-accent;
+}
+
+.collapsible-content {
   padding-top: 8px;
 }
 
