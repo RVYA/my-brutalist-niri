@@ -1,5 +1,6 @@
 import app from "ags/gtk4/app"
 import { Gtk, Gdk } from "ags/gtk4"
+import { createRoot } from "gnim"
 import GLib from "gi://GLib"
 import Gio from "gi://Gio"
 import TopBar from "./widget/TopBar"
@@ -29,25 +30,39 @@ function reloadCss() {
   }
 }
 
+let lookAndFeelLoaded = false
+function ensureLookAndFeel() {
+  if (lookAndFeelLoaded) return
+  lookAndFeelLoaded = true
+  createRoot(() => {
+    app.get_monitors().map((monitor) => {
+      LookAndFeel(monitor)
+    })
+  })
+}
+
 function initWallpaper() {
   try {
-    const themeJson = `${GLib.getenv("HOME")}/.config/ags/theme.json`
-    const [, data] = GLib.file_get_contents(themeJson)
-    const theme = JSON.parse(new TextDecoder().decode(data))
-    if (theme?.wallpaper) {
-      const scriptPath = `${GLib.getenv("HOME")}/dotfiles/scripts/set-wallpaper.sh`
-      Gio.Subprocess.new(
-        [
-          "/usr/bin/bash",
-          scriptPath,
-          theme.wallpaper,
-          String(theme.step ?? 0),
-          "none",
-          "0.0",
-          theme.mode || "crop",
-        ],
-        Gio.SubprocessFlags.NONE
-      )
+    const activeWp = `${GLib.getenv("HOME")}/.cache/ags/active-wallpaper.jpg`
+    if (!GLib.file_test(activeWp, GLib.FileTest.EXISTS)) {
+      const themeJson = `${GLib.getenv("HOME")}/.config/ags/theme.json`
+      const [, data] = GLib.file_get_contents(themeJson)
+      const theme = JSON.parse(new TextDecoder().decode(data))
+      if (theme?.wallpaper) {
+        const scriptPath = `${GLib.getenv("HOME")}/dotfiles/scripts/set-wallpaper.sh`
+        Gio.Subprocess.new(
+          [
+            "/usr/bin/bash",
+            scriptPath,
+            theme.wallpaper,
+            String(theme.step ?? 0),
+            "none",
+            "0.0",
+            theme.mode || "crop",
+          ],
+          Gio.SubprocessFlags.NONE
+        )
+      }
     }
   } catch {}
 }
@@ -64,7 +79,10 @@ app.start({
     initWallpaper()
     app.get_monitors().map((monitor) => {
       TopBar(monitor)
-      LookAndFeel(monitor)
+    })
+    GLib.idle_add(GLib.PRIORITY_LOW, () => {
+      ensureLookAndFeel()
+      return GLib.SOURCE_REMOVE
     })
   },
 
@@ -74,18 +92,23 @@ app.start({
       reloadCss()
       res("css reloaded")
     } else if (cmd.includes("toggle-look-and-feel")) {
+      ensureLookAndFeel()
       toggleLookAndFeel()
       res("look-and-feel toggled")
     } else if (cmd.includes("submenu-theme")) {
+      ensureLookAndFeel()
       openSubmenu("theme")
       res("theme submenu opened")
     } else if (cmd.includes("submenu-wallpaper")) {
+      ensureLookAndFeel()
       openSubmenu("wallpaper")
       res("wallpaper submenu opened")
     } else if (cmd.includes("submenu-typefaces")) {
+      ensureLookAndFeel()
       openSubmenu("typefaces")
       res("typefaces submenu opened")
     } else if (cmd.includes("submenu-close")) {
+      ensureLookAndFeel()
       setActiveSubmenu(null)
       res("submenu closed")
     } else if (cmd.includes("quit")) {
