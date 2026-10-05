@@ -28,22 +28,21 @@ window.modal-window-root {
 
 .topbar-pill {
   font-family: var(--font-mono);
-  background-color: @color-obverse;
+  background-color: alpha(@color-obverse, 0.50);
+  border: none;
   border-radius: 9999px;
   padding: 4px 16px;
-  margin-top: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   min-height: 28px;
 }
 
 .tray-pill {
-  background-color: @color-obverse;
-  border: 1px solid @color-neutral;
+  background-color: alpha(@color-obverse, 0.50);
+  border: none;
   border-radius: 9999px;
   padding: 4px 10px;
-  margin-top: 6px;
   margin-right: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   min-height: 24px;
 }
 
@@ -99,20 +98,12 @@ window.modal-window-root {
   margin-right: 2px;
 }
 
-.verb-label {
-  font-family: var(--font-mono);
-  font-size: var(--font-size-mono);
-  font-weight: var(--font-weight-mono);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: @color-accent;
-  margin-right: 2px;
-}
-
 .title-label {
-  font-family: var(--font-mono);
-  font-size: var(--font-size-mono);
-  font-weight: var(--font-weight-mono);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sans);
+  font-weight: var(--font-weight-sans);
+  font-style: var(--font-style-sans);
+  font-variation-settings: var(--font-variation-sans);
   color: @color-inverse;
 }
 
