@@ -244,9 +244,9 @@ def generate_css(fonts_config):
 .title-label {{
   font-family: var(--font-sans);
   font-size: var(--font-size-sans);
-  font-weight: var(--font-weight-sans);
+  font-weight: 700;
   font-style: var(--font-style-sans);
-  font-variation-settings: var(--font-variation-sans);
+  font-variation-settings: 'wght' 700;
 }}
 
 .topbar-pill,

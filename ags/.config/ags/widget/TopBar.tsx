@@ -47,7 +47,7 @@ function ActiveWindowInfo() {
   })
 
   return (
-    <box class="active-window-box" spacing={8} valign={Gtk.Align.CENTER}>
+    <box class="active-window-box" spacing={4} valign={Gtk.Align.CENTER}>
       <image class="app-icon" iconName={icon} pixelSize={18} />
       <label
         class="title-label"
