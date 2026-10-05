@@ -1,7 +1,8 @@
 import app from "ags/gtk4/app"
 import { Astal, Gtk, Gdk } from "ags/gtk4"
 import { createPoll } from "ags/time"
-import { createState, createComputed } from "gnim"
+import { createComputed, createEffect } from "gnim"
+import GLib from "gi://GLib"
 import {
   focusedWindow,
   closeWindow,
@@ -38,27 +39,20 @@ function ActiveWindowInfo() {
   })
 
   const title = createComputed(() => {
-    return focusedWindow().title || "DESKTOP"
+    const raw = focusedWindow().title || "DESKTOP"
+    if (raw.length > 64) {
+      return raw.slice(0, 63) + "…"
+    }
+    return raw
   })
-
-  const verb = createComputed(() => {
-    return focusedWindow().verb
-  })
-
-  const hasVerb = createComputed(() => Boolean(focusedWindow().verb))
 
   return (
     <box class="active-window-box" spacing={8} valign={Gtk.Align.CENTER}>
       <image class="app-icon" iconName={icon} pixelSize={18} />
       <label
-        class="verb-label"
-        label={verb}
-        visible={hasVerb}
-      />
-      <label
         class="title-label"
         label={title}
-        maxWidthChars={48}
+        maxWidthChars={64}
         ellipsize={3}
       />
     </box>
@@ -66,8 +60,12 @@ function ActiveWindowInfo() {
 }
 
 function Clock() {
-  const shortTime = createPoll("", 1000, "bash -c \"LC_TIME=C date '+%a.%H:%M' | tr '[:lower:]' '[:upper:]'\"")
-  const fullDate = createPoll("", 60000, "bash -c \"LC_TIME=C date '+%A, %B %-d, %Y'\"")
+  const shortTime = createPoll("", 1000, () => {
+    return GLib.DateTime.new_now_local().format("%a.%H:%M")?.toUpperCase() || ""
+  })
+  const fullDate = createPoll("", 60000, () => {
+    return GLib.DateTime.new_now_local().format("%A, %B %-d, %Y") || ""
+  })
 
   return (
     <box
@@ -82,22 +80,42 @@ function Clock() {
 
 export default function TopBar(gdkmonitor: Gdk.Monitor) {
   const { TOP } = Astal.WindowAnchor
+  const maxAllowedWidth = Math.floor(gdkmonitor.geometry.width * 0.70)
 
-  return (
+  const win = (
     <window
       visible
       name="main-topbar"
+      namespace="topbar"
       class="main-topbar-window"
       gdkmonitor={gdkmonitor}
       exclusivity={Astal.Exclusivity.EXCLUSIVE}
       anchor={TOP}
+      marginTop={6}
       application={app}
     >
-      <box class="topbar-pill" spacing={16} valign={Gtk.Align.CENTER}>
+      <box
+        class="topbar-pill"
+        spacing={16}
+        valign={Gtk.Align.CENTER}
+        halign={Gtk.Align.CENTER}
+      >
         <WindowControls />
         <ActiveWindowInfo />
         <Clock />
       </box>
     </window>
-  )
+  ) as Astal.Window
+
+  createEffect(() => {
+    focusedWindow()
+    const pillBox = win.get_child() as Gtk.Box | null
+    if (pillBox) {
+      const [, natW] = pillBox.measure(Gtk.Orientation.HORIZONTAL, -1)
+      const targetWidth = Math.min(natW, maxAllowedWidth)
+      win.set_default_size(targetWidth, -1)
+    }
+  })
+
+  return win
 }

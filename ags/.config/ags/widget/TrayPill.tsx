@@ -24,10 +24,13 @@ export default function TrayPill(gdkmonitor: Gdk.Monitor) {
     <window
       visible
       name="tray-pill"
+      namespace="tray"
       class="tray-pill-window"
       gdkmonitor={gdkmonitor}
       exclusivity={Astal.Exclusivity.EXCLUSIVE}
       anchor={TOP | RIGHT}
+      marginTop={6}
+      marginRight={8}
       application={app}
     >
       <box class="tray-pill" spacing={8} valign={Gtk.Align.CENTER}>
