@@ -126,14 +126,29 @@ export function closeWindow() {
   execAsync("niri msg action close-window").catch(console.error)
 }
 
-export function expandWindow() {
-  execAsync("niri msg action set-column-width 100% && niri msg action reset-window-height").catch(console.error)
+export async function expandWindow() {
+  try {
+    await execAsync(["niri", "msg", "action", "set-column-width", "100%"])
+    await execAsync(["niri", "msg", "action", "reset-window-height"])
+  } catch (e) {
+    console.error("expandWindow error:", e)
+  }
 }
 
-export function shrinkToHalfWindow() {
-  execAsync("niri msg action set-column-width 50% && niri msg action reset-window-height").catch(console.error)
+export async function shrinkToHalfWindow() {
+  try {
+    await execAsync(["niri", "msg", "action", "set-column-width", "50%"])
+    await execAsync(["niri", "msg", "action", "reset-window-height"])
+  } catch (e) {
+    console.error("shrinkToHalfWindow error:", e)
+  }
 }
 
-export function shrinkToQuarterWindow() {
-  execAsync("niri msg action set-column-width 50% && niri msg action set-window-height 50%").catch(console.error)
+export async function shrinkToQuarterWindow() {
+  try {
+    await execAsync(["niri", "msg", "action", "set-column-width", "50%"])
+    await execAsync(["niri", "msg", "action", "set-window-height", "50%"])
+  } catch (e) {
+    console.error("shrinkToQuarterWindow error:", e)
+  }
 }
