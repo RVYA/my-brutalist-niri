@@ -13,9 +13,24 @@ button label {
   color: inherit;
 }
 
+window.topbar-handle-window,
 window.main-topbar-window,
 window.tray-pill-window {
   background: transparent;
+}
+
+.topbar-handle-wrapper {
+  padding: 0;
+  background: transparent;
+}
+
+.topbar-handle {
+  min-width: 64px;
+  min-height: 4px;
+  background-color: @topbar-handle-color;
+  border-radius: 9999px;
+  border: none;
+  box-shadow: none;
 }
 
 window.modal-window-root {
@@ -28,11 +43,11 @@ window.modal-window-root {
 
 .topbar-pill {
   font-family: var(--font-mono);
-  background-color: alpha(@color-obverse, 0.50);
-  border: none;
+  background-color: alpha(@color-obverse, 0.65);
+  border: 1px solid alpha(@color-neutral, 0.25);
   border-radius: 9999px;
   padding: 4px 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.40);
   min-height: 28px;
 }
 
@@ -1138,3 +1153,67 @@ dropdown.brutalist-dropdown popover listview row:active label {
 .font-preview-line {
   line-height: 1.6;
 }
+
+popover.directional-tooltip {
+  background: transparent;
+  padding: 0;
+}
+
+popover.directional-tooltip contents,
+popover.directional-tooltip > contents {
+  background-color: alpha(@color-obverse, 0.85);
+  border: 1px solid alpha(@color-neutral, 0.40);
+  border-radius: 6px;
+  padding: 4px 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+popover.directional-tooltip arrow,
+popover.directional-tooltip > arrow {
+  background-color: alpha(@color-obverse, 0.85);
+  border: 1px solid alpha(@color-neutral, 0.40);
+}
+
+tooltip,
+tooltip.background,
+tooltip > box {
+  background-color: alpha(@color-obverse, 0.85);
+  border: 1px solid alpha(@color-neutral, 0.40);
+  border-radius: 6px;
+  padding: 4px 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+tooltip label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: @color-inverse;
+}
+
+.tooltip-content-box {
+  background: transparent;
+}
+
+.tooltip-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: @color-inverse;
+}
+
+.tooltip-shortcut {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: alpha(@color-inverse, 0.60);
+  background-color: alpha(@color-inverse, 0.12);
+  border: 1px solid alpha(@color-inverse, 0.15);
+  border-radius: 4px;
+  padding: 1px 4px;
+  margin-left: 6px;
+}
+
+

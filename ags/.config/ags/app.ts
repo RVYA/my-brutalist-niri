@@ -3,7 +3,7 @@ import { Gtk, Gdk } from "ags/gtk4"
 import { createRoot } from "gnim"
 import GLib from "gi://GLib"
 import Gio from "gi://Gio"
-import TopBar from "./widget/TopBar"
+import TopBar, { testShowTopBar, testHideTopBar } from "./widget/TopBar"
 import TrayPill from "./widget/TrayPill"
 import LookAndFeel, { toggleLookAndFeel, setActiveSubmenu, openSubmenu } from "./widget/LookAndFeel"
 
@@ -22,8 +22,19 @@ function reloadCss() {
     const [, styleData] = GLib.file_get_contents(style)
     const colorsText = new TextDecoder().decode(colorsData)
     const rawStyle = new TextDecoder().decode(styleData)
-    const cleanedStyle = rawStyle.replace(/@import\s+[^;]+;/g, "")
-    const cssText = colorsText + "\n" + cleanedStyle + "\n" + fontsText
+    const match = colorsText.match(/@define-color\s+color-obverse\s+(#[0-9a-fA-F]{6});/)
+    let handleColor = "#ffffff"
+    if (match) {
+      const hex = match[1].slice(1)
+      const r = parseInt(hex.slice(0, 2), 16) / 255
+      const g = parseInt(hex.slice(2, 4), 16) / 255
+      const b = parseInt(hex.slice(4, 6), 16) / 255
+      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+      handleColor = lum > 0.5 ? "#000000" : "#ffffff"
+    }
+    const handleColorDef = `@define-color topbar-handle-color ${handleColor};\n`
+
+    const cssText = colorsText + "\n" + handleColorDef + cleanedStyle + "\n" + fontsText
     app.apply_css(cssText, true)
   } catch {
     app.apply_css(style, true)
@@ -111,6 +122,12 @@ app.start({
       ensureLookAndFeel()
       setActiveSubmenu(null)
       res("submenu closed")
+    } else if (cmd.includes("show-topbar")) {
+      testShowTopBar()
+      res("topbar revealed")
+    } else if (cmd.includes("hide-topbar")) {
+      testHideTopBar()
+      res("topbar hidden")
     } else if (cmd.includes("quit")) {
       res("quitting")
       app.quit()
