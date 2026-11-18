@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!-- This file was automatically generated from C sources - DO NOT EDIT!
+To affect the contents of this file, edit the original C definitions,
+and/or use gtk-doc annotations.  -->
+<repository version="1.2"
+            xmlns="http://www.gtk.org/introspection/core/1.0"
+            xmlns:c="http://www.gtk.org/introspection/c/1.0"
+            xmlns:doc="http://www.gtk.org/introspection/doc/1.0"
+            xmlns:glib="http://www.gtk.org/introspection/glib/1.0">
+  <include name="Gtk" version="4.0"/>
+  <package name="gtk4"/>
+  <doc:format name="unknown"/>
+  <namespace name="NiriBlur"
+             version="1.0"
+             shared-library="libniriblur.so"
+             c:identifier-prefixes="niri_blur_"
+             c:symbol-prefixes="niri_blur_">
+    <function name="set_region" c:identifier="niri_blur_set_region">
+      <source-position filename="niri_blur.h" line="12"/>
+      <return-value transfer-ownership="none">
+        <type name="none" c:type="void"/>
+      </return-value>
+      <parameters>
+        <parameter name="widget" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="niri_blur.h"
+               line="8">a #GtkWidget</doc>
+          <type name="Gtk.Widget" c:type="GtkWidget*"/>
+        </parameter>
+        <parameter name="coords" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="niri_blur.h"
+               line="9">flat array of [x, y, w, h, ...] rectangles</doc>
+          <array length="2" zero-terminated="0" c:type="const gint*">
+            <type name="gint" c:type="gint"/>
+          </array>
+        </parameter>
+        <parameter name="n_coords" transfer-ownership="none">
+          <doc xml:space="preserve"
+               filename="niri_blur.h"
+               line="10">number of integers in @coords</doc>
+          <type name="gint" c:type="gint"/>
+        </parameter>
+      </parameters>
+    </function>
+  </namespace>
+</repository>

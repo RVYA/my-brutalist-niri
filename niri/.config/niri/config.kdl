@@ -59,6 +59,10 @@ layout {
     }
 }
 
+environment {
+    GI_TYPELIB_PATH "/home/caylakym/.config/ags/lib"
+}
+
 spawn-at-startup "awww-daemon"
 spawn-at-startup "awww" "restore"
 spawn-at-startup "ags" "run"
@@ -72,10 +76,10 @@ animations {
 }
 
 blur {
-    passes 3
-    offset 2.5
-    noise 0.02
-    saturation 1.3
+    passes 4
+    offset 3.0
+    noise 0.045
+    saturation 1.4
 }
 
 /-layer-rule {
