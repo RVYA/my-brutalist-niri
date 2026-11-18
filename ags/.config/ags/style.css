@@ -370,7 +370,6 @@ popover.notif-popover > arrow {
 
 .app-icon {
   margin-right: 0;
-  filter: grayscale(100%);
 }
 
 .title-label {
