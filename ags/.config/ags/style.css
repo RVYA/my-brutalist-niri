@@ -177,7 +177,7 @@ window.modal-window-root {
 }
 
 .media-status-icon {
-  color: @color-accent;
+  color: @color-inverse;
 }
 
 .media-track-label {
@@ -197,7 +197,7 @@ window.modal-window-root {
 }
 
 .sysinfo-icon.active-accent {
-  color: @color-accent;
+  color: @color-inverse;
   opacity: 1.0;
 }
 
@@ -212,43 +212,38 @@ window.modal-window-root {
 .notif-trigger-btn {
   background: transparent;
   border: none;
-  padding: 0 2px;
+  padding: 0 1px;
   color: @color-inverse;
 }
 
 .notif-bell-icon {
   color: @color-inverse;
   opacity: 0.75;
+  margin-right: 4px;
+  margin-top: 1px;
   transition: color 0.15s ease, opacity 0.15s ease;
 }
 
-.notif-bell-icon.unread {
-  color: @color-accent;
-  opacity: 1.0;
-}
-
+.notif-bell-icon.unread,
 .notif-trigger-btn:hover .notif-bell-icon {
-  color: @color-accent;
+  color: @color-inverse;
   opacity: 1.0;
 }
 
-.notif-badge-label {
+.notif-chip-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 8px;
   font-weight: 800;
+  line-height: 0.9;
   color: @color-obverse;
   background-color: @color-inverse;
   border-radius: 9999px;
-  padding: 0 5px;
-  min-height: 15px;
-}
-
-.notif-preview-label {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  color: @color-inverse;
-  opacity: 0.85;
-  margin-left: 6px;
+  padding: 0 3px;
+  min-width: 7px;
+  min-height: 9px;
+  margin-top: -2px;
+  margin-right: -2px;
+  transform: scale(0.76);
 }
 
 popover.notif-popover {
@@ -375,6 +370,7 @@ popover.notif-popover > arrow {
 
 .app-icon {
   margin-right: 0;
+  filter: grayscale(100%);
 }
 
 .title-label {

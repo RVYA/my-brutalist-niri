@@ -3,7 +3,14 @@ import { Astal, Gtk, Gdk } from "ags/gtk4"
 import { createPoll } from "ags/time"
 import { createComputed, createEffect, createState } from "gnim"
 import GLib from "gi://GLib"
+import Graphene from "gi://Graphene"
+import cairo from "cairo"
 import Tooltip, { attachTooltip } from "./Tooltip"
+
+let NiriBlur: { set_region: (widget: Gtk.Widget, coords: number[]) => void } | null = null
+try {
+  NiriBlur = (imports as any).gi.NiriBlur
+} catch {}
 import {
   focusedWindow,
   closeWindow,
@@ -36,7 +43,8 @@ import {
 } from "../service/notifications"
 
 let cachedObverseRgb: [number, number, number] = [0.08, 0.13, 0.16]
-let cachedNeutralRgb: [number, number, number] = [0.5, 0.5, 0.5]
+let cachedInverseRgb: [number, number, number] = [0.92, 0.89, 0.86]
+let cachedAccentRgb: [number, number, number] = [0.45, 0.06, 0.50]
 
 export function refreshTopBarPalette() {
   try {
@@ -52,10 +60,19 @@ export function refreshTopBarPalette() {
         parseInt(hex.slice(4, 6), 16) / 255,
       ]
     }
-    const neutMatch = text.match(/@define-color\s+color-neutral\s+#([0-9a-fA-F]{6});/)
-    if (neutMatch) {
-      const hex = neutMatch[1]
-      cachedNeutralRgb = [
+    const invMatch = text.match(/@define-color\s+color-inverse\s+#([0-9a-fA-F]{6});/)
+    if (invMatch) {
+      const hex = invMatch[1]
+      cachedInverseRgb = [
+        parseInt(hex.slice(0, 2), 16) / 255,
+        parseInt(hex.slice(2, 4), 16) / 255,
+        parseInt(hex.slice(4, 6), 16) / 255,
+      ]
+    }
+    const accMatch = text.match(/@define-color\s+color-accent\s+#([0-9a-fA-F]{6});/)
+    if (accMatch) {
+      const hex = accMatch[1]
+      cachedAccentRgb = [
         parseInt(hex.slice(0, 2), 16) / 255,
         parseInt(hex.slice(2, 4), 16) / 255,
         parseInt(hex.slice(4, 6), 16) / 255,
@@ -219,7 +236,9 @@ function MediaSegment() {
   )
 }
 
-function SystemInfoSegment() {
+function SystemInfoSegment(props: {
+  onPopoverStateChange: (open: boolean) => void
+}) {
   const shortTime = createPoll("", 1000, () => {
     return GLib.DateTime.new_now_local().format("%a.%H:%M")?.toUpperCase() || ""
   })
@@ -243,55 +262,6 @@ function SystemInfoSegment() {
     return `Battery: ${b.percent}% (${b.charging ? "Charging" : "Discharging"})`
   })
 
-  return (
-    <box
-      class="topbar-segment segment-sysinfo"
-      spacing={8}
-      valign={Gtk.Align.CENTER}
-    >
-      <box class="sysinfo-icons-row" spacing={6} valign={Gtk.Align.CENTER}>
-        <Tooltip text={netTooltip} position="bottom">
-          <image class="sysinfo-icon" iconName={netIcon} pixelSize={14} />
-        </Tooltip>
-
-        <Tooltip text="Bluetooth active" position="bottom">
-          <image
-            class="sysinfo-icon"
-            iconName="bluetooth-active-symbolic"
-            pixelSize={14}
-            visible={hasBt}
-          />
-        </Tooltip>
-
-        <Tooltip text="Keep awake active" position="bottom">
-          <image
-            class="sysinfo-icon active-accent"
-            iconName="night-light-symbolic"
-            pixelSize={14}
-            visible={hasCaff}
-          />
-        </Tooltip>
-
-        <Tooltip text={batTooltip} position="bottom">
-          <image
-            class="sysinfo-icon"
-            iconName={batIcon}
-            pixelSize={14}
-            visible={hasBat}
-          />
-        </Tooltip>
-      </box>
-
-      <Tooltip text={fullDate} position="bottom">
-        <label class="clock-label" label={shortTime} />
-      </Tooltip>
-    </box>
-  )
-}
-
-function NotificationSegment(props: {
-  onPopoverStateChange: (open: boolean) => void
-}) {
   const count = createComputed(() => notifications().length)
   const hasUnread = createComputed(() => notifications().length > 0)
   const notifTooltip = createComputed(() => {
@@ -403,7 +373,8 @@ function NotificationSegment(props: {
 
   return (
     <box
-      class="topbar-segment segment-notifications"
+      class="topbar-segment segment-sysinfo"
+      spacing={6}
       valign={Gtk.Align.CENTER}
       $={(self: Gtk.Box) => {
         const pop = new Gtk.Popover({
@@ -463,9 +434,47 @@ function NotificationSegment(props: {
         rebuildNotificationList()
       }}
     >
+      <box class="sysinfo-icons-row" spacing={6} valign={Gtk.Align.CENTER}>
+        <Tooltip text={netTooltip} position="bottom">
+          <image class="sysinfo-icon" iconName={netIcon} pixelSize={14} />
+        </Tooltip>
+
+        <Tooltip text="Bluetooth active" position="bottom">
+          <image
+            class="sysinfo-icon"
+            iconName="bluetooth-active-symbolic"
+            pixelSize={14}
+            visible={hasBt}
+          />
+        </Tooltip>
+
+        <Tooltip text="Keep awake active" position="bottom">
+          <image
+            class="sysinfo-icon active-accent"
+            iconName="night-light-symbolic"
+            pixelSize={14}
+            visible={hasCaff}
+          />
+        </Tooltip>
+
+        <Tooltip text={batTooltip} position="bottom">
+          <image
+            class="sysinfo-icon"
+            iconName={batIcon}
+            pixelSize={14}
+            visible={hasBat}
+          />
+        </Tooltip>
+      </box>
+
+      <Tooltip text={fullDate} position="bottom">
+        <label class="clock-label" label={shortTime} valign={Gtk.Align.CENTER} />
+      </Tooltip>
+
       <Tooltip text={notifTooltip} position="bottom">
         <button
           class="notif-trigger-btn"
+          valign={Gtk.Align.CENTER}
           onClicked={() => {
             if (!popoverRef) return
             if (popoverRef.get_visible()) {
@@ -477,20 +486,37 @@ function NotificationSegment(props: {
             }
           }}
         >
-          <box spacing={5} valign={Gtk.Align.CENTER}>
-            <image
-              class={createComputed(() =>
-                hasUnread() ? "notif-bell-icon unread" : "notif-bell-icon"
-              )}
-              iconName="preferences-system-notifications-symbolic"
-              pixelSize={14}
-            />
-            <label
-              class="notif-badge-label"
-              visible={hasUnread}
-              label={createComputed(() => String(count()))}
-            />
-          </box>
+          <box
+            valign={Gtk.Align.CENTER}
+            halign={Gtk.Align.CENTER}
+            $={(self: Gtk.Box) => {
+              const ov = new Gtk.Overlay({
+                valign: Gtk.Align.CENTER,
+                halign: Gtk.Align.CENTER,
+              })
+              const bell = (
+                <image
+                  class={createComputed(() =>
+                    hasUnread() ? "notif-bell-icon unread" : "notif-bell-icon"
+                  )}
+                  iconName="preferences-system-notifications-symbolic"
+                  pixelSize={14}
+                />
+              ) as Gtk.Image
+              const badge = (
+                <label
+                  class="notif-chip-label"
+                  visible={hasUnread}
+                  halign={Gtk.Align.END}
+                  valign={Gtk.Align.START}
+                  label={createComputed(() => String(count()))}
+                />
+              ) as Gtk.Label
+              ov.set_child(bell)
+              ov.add_overlay(badge)
+              self.append(ov)
+            }}
+          />
         </button>
       </Tooltip>
     </box>
@@ -576,21 +602,45 @@ export default function TopBar(gdkmonitor: Gdk.Monitor) {
     }
   }
 
+  let revealTickId: number | null = null
+
+  function startRevealTick(durationMs = 240) {
+    if (revealTickId !== null) {
+      statusWin.remove_tick_callback(revealTickId)
+      revealTickId = null
+    }
+    let startTime: number | null = null
+    const durationUs = durationMs * 1000
+    revealTickId = statusWin.add_tick_callback((_, frameClock) => {
+      const now = frameClock.get_frame_time()
+      if (startTime === null) {
+        startTime = now
+      }
+      bgCanvasRef?.queue_draw()
+      if (now - startTime >= durationUs) {
+        revealTickId = null
+        return GLib.SOURCE_REMOVE
+      }
+      return GLib.SOURCE_CONTINUE
+    })
+  }
+
   function showStatus() {
     cancelHideTimer()
+    setIsRevealed(true)
+    if (pillBoxRef) {
+      const [, natW] = pillBoxRef.measure(Gtk.Orientation.HORIZONTAL, -1)
+      const targetWidth = Math.min(natW, maxAllowedWidth)
+      if (targetWidth > 0) {
+        currentWidth = targetWidth
+        statusWin.set_default_size(targetWidth, -1)
+      }
+    }
     statusWin.set_visible(true)
     if (backgroundApps().length > 0) {
       bgWin.set_visible(true)
     }
-    setIsRevealed(true)
-    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 30, () => {
-      bgCanvasRef?.queue_draw()
-      return GLib.SOURCE_REMOVE
-    })
-    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
-      bgCanvasRef?.queue_draw()
-      return GLib.SOURCE_REMOVE
-    })
+    startRevealTick(240)
   }
 
   function scheduleHideStatus() {
@@ -601,9 +651,13 @@ export default function TopBar(gdkmonitor: Gdk.Monitor) {
       if (notifPopoverOpen) return GLib.SOURCE_REMOVE
       setIsRevealed(false)
       setIsBgHovered(false)
-      unmapTimerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 180, () => {
+      startRevealTick(220)
+      unmapTimerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 190, () => {
         unmapTimerId = null
         if (!isRevealed()) {
+          if (NiriBlur && bgCanvasRef) {
+            NiriBlur.set_region(bgCanvasRef, [])
+          }
           statusWin.set_visible(false)
           bgWin.set_visible(false)
         }
@@ -775,8 +829,7 @@ export default function TopBar(gdkmonitor: Gdk.Monitor) {
                 <WindowControlsSegment />
                 <WindowPreviewSegment />
                 <MediaSegment />
-                <SystemInfoSegment />
-                <NotificationSegment
+                <SystemInfoSegment
                   onPopoverStateChange={(open) => {
                     notifPopoverOpen = open
                     if (open) {
@@ -791,9 +844,13 @@ export default function TopBar(gdkmonitor: Gdk.Monitor) {
 
             pillBoxRef = chainBox
 
+            let lastBlurKey = ""
+
             bgCanvas.set_draw_func((area, cr) => {
               refreshTopBarPalette()
               const [r, g, b] = cachedObverseRgb
+              const [ir, ig, ib] = cachedInverseRgb
+              const [ar, ag, ab] = cachedAccentRgb
 
               const rawRects: Array<{ x: number; y: number; w: number; h: number }> = []
               let child = chainBox.get_first_child()
@@ -833,6 +890,7 @@ export default function TopBar(gdkmonitor: Gdk.Monitor) {
                 }
               })
 
+              cr.save()
               cr.newPath()
               cr.arc(segs[0].leftOuterCx, cy, rad, Math.PI / 2, (Math.PI * 3) / 2)
 
@@ -912,8 +970,108 @@ export default function TopBar(gdkmonitor: Gdk.Monitor) {
               }
 
               cr.closePath()
-              cr.setSourceRGBA(0, 0, 0, 1.0)
-              cr.fill()
+              cr.clip()
+
+              const tintR = r * 0.72 + ar * 0.16 + ir * 0.12
+              const tintG = g * 0.72 + ag * 0.16 + ig * 0.12
+              const tintB = b * 0.72 + ab * 0.16 + ib * 0.12
+              cr.setSourceRGBA(tintR, tintG, tintB, 0.36)
+              cr.paint()
+
+              cr.restore()
+
+              if (NiriBlur) {
+                let offX = 0
+                let offY = 0
+                const [okPt, pt] = area.compute_point(
+                  statusWin,
+                  new Graphene.Point({ x: 0, y: 0 })
+                )
+                if (okPt) {
+                  offX = Math.round(pt.x)
+                  offY = Math.round(pt.y)
+                }
+
+                const blurKey =
+                  `${offX},${offY}|` +
+                  segs
+                    .map((s) => `${Math.round(s.leftOuterCx)}:${Math.round(s.rightOuterCx)}`)
+                    .join("|")
+
+                if (blurKey !== lastBlurKey) {
+                  lastBlurKey = blurKey
+                  const xStart = Math.floor(segs[0].leftOuterCx - rad)
+                  const xEnd = Math.ceil(last.rightOuterCx + rad)
+                  const coords: number[] = []
+
+                  const halfHeightAt = (x: number): number => {
+                    if (x < segs[0].leftOuterCx) {
+                      const dx = segs[0].leftOuterCx - x
+                      return Math.sqrt(Math.max(0, rad * rad - dx * dx))
+                    }
+                    if (x > last.rightOuterCx) {
+                      const dx = x - last.rightOuterCx
+                      return Math.sqrt(Math.max(0, rad * rad - dx * dx))
+                    }
+                    for (let i = 0; i < segs.length; i++) {
+                      const cur = segs[i]
+                      if (x >= cur.leftOuterCx && x <= cur.rightOuterCx) {
+                        return rad
+                      }
+                      if (i < segs.length - 1) {
+                        const next = segs[i + 1]
+                        if (x > cur.rightOuterCx && x < next.leftOuterCx) {
+                          const ax = cur.rightOuterCx + rad * cosT
+                          const bx = next.leftOuterCx - rad * cosT
+                          if (x <= ax) {
+                            const dx = x - cur.rightOuterCx
+                            return Math.sqrt(Math.max(0, rad * rad - dx * dx))
+                          }
+                          if (x >= bx) {
+                            const dx = next.leftOuterCx - x
+                            return Math.sqrt(Math.max(0, rad * rad - dx * dx))
+                          }
+                          const mx = (ax + bx) / 2
+                          const halfSpan = Math.max(1, (bx - ax) / 2)
+                          const u = Math.min(1, Math.abs(x - mx) / halfSpan)
+                          const ayH = rad * sinT
+                          return w + (ayH - w) * (0.5 - 0.5 * Math.cos(Math.PI * u))
+                        }
+                      }
+                    }
+                    return 0
+                  }
+
+                  let runX = xStart
+                  let runTop = 0
+                  let runH = 0
+
+                  for (let x = xStart; x <= xEnd; x++) {
+                    const hh = halfHeightAt(x + 0.5)
+                    const top = hh > 0.5 ? Math.max(0, Math.round(offY + cy - hh)) : 0
+                    const bot = hh > 0.5 ? Math.max(0, Math.round(offY + cy + hh)) : 0
+                    const h = Math.max(0, bot - top)
+
+                    if (x === xStart) {
+                      runX = x
+                      runTop = top
+                      runH = h
+                    } else if (top !== runTop || h !== runH) {
+                      if (runH > 0) {
+                        coords.push(offX + runX, runTop, x - runX, runH)
+                      }
+                      runX = x
+                      runTop = top
+                      runH = h
+                    }
+                  }
+                  if (runH > 0) {
+                    coords.push(offX + runX, runTop, xEnd - runX + 1, runH)
+                  }
+
+                  NiriBlur.set_region(area, coords)
+                }
+              }
             })
 
             bgCanvasRef = bgCanvas
