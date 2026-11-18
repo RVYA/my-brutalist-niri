@@ -243,7 +243,18 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
       const colorsText = new TextDecoder().decode(colorsData)
       const rawStyle = new TextDecoder().decode(styleData)
       const cleanedStyle = rawStyle.replace(/@import\s+[^;]+;/g, "")
-      const cssText = colorsText + "\n" + cleanedStyle + "\n" + fontsText
+      const match = colorsText.match(/@define-color\s+color-obverse\s+(#[0-9a-fA-F]{6});/)
+      let handleColor = "#ffffff"
+      if (match) {
+        const hex = match[1].slice(1)
+        const r = parseInt(hex.slice(0, 2), 16) / 255
+        const g = parseInt(hex.slice(2, 4), 16) / 255
+        const b = parseInt(hex.slice(4, 6), 16) / 255
+        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        handleColor = lum > 0.5 ? "#000000" : "#ffffff"
+      }
+      const handleColorDef = `@define-color topbar-handle-color ${handleColor};\n`
+      const cssText = colorsText + "\n" + handleColorDef + cleanedStyle + "\n" + fontsText
       app.apply_css(cssText, true)
     } catch {}
   }
@@ -1177,7 +1188,7 @@ export default function LookAndFeel(gdkmonitor: Gdk.Monitor) {
               "error",
               "success",
             ] as const).map((key) => (
-              <Tooltip text={key.toUpperCase()} position="top">
+              <Tooltip text={key.charAt(0).toUpperCase() + key.slice(1)} position="top">
                 <box class={`theme-nav-circle theme-nav-circle-${key}`} />
               </Tooltip>
             ))}

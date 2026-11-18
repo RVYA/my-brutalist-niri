@@ -135,7 +135,7 @@ export default function ModalDialog({
             >
               <box class="modal-header" spacing={12} valign={Gtk.Align.CENTER}>
                 <box class="modal-header-left" valign={Gtk.Align.CENTER}>
-                  <Tooltip text="CLOSE" position="bottom">
+                  <Tooltip text="Close" position="bottom">
                     <button
                       class="window-btn btn-close"
                       onClicked={onClose}

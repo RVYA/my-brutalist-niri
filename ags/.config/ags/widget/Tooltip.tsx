@@ -4,11 +4,13 @@ import Graphene from "gi://Graphene"
 import { createEffect } from "gnim"
 
 export type TooltipPosition = "top" | "bottom" | "left" | "right" | "auto" | Gtk.PositionType
+export type TooltipAlign = "start" | "end" | "auto"
 
 export interface TooltipOptions {
   text?: string | (() => string)
   shortcut?: string
   position?: TooltipPosition
+  align?: TooltipAlign
   delay?: number
   content?: Gtk.Widget | (() => Gtk.Widget)
   className?: string
@@ -121,11 +123,56 @@ export function attachTooltip(widget: Gtk.Widget, options: TooltipOptions): Gtk.
   }
 
   let timerId: number | null = null
+  let lastMouseX: number | null = null
 
   function cancelTimer() {
     if (timerId !== null) {
       GLib.source_remove(timerId)
       timerId = null
+    }
+  }
+
+  function updateArrowAlignment(pos: Gtk.PositionType) {
+    const widgetW = Math.max(1, widget.get_width())
+    const widgetH = Math.max(1, widget.get_height())
+    const anchorX =
+      widgetW > 48 && lastMouseX !== null
+        ? Math.min(Math.max(lastMouseX, 8), widgetW - 8)
+        : widgetW / 2
+
+    let useEndAlign = false
+    if (options.align === "end") {
+      useEndAlign = true
+    } else if (options.align === "start") {
+      useEndAlign = false
+    } else {
+      const root = widget.get_root()
+      if (root instanceof Gtk.Widget) {
+        const [success, pt] = widget.compute_point(
+          root,
+          new Graphene.Point({ x: anchorX, y: 0 })
+        )
+        const rootWidth = root.get_width()
+        if (success && rootWidth > 0) {
+          useEndAlign = pt.x > rootWidth / 2
+        }
+      }
+    }
+
+    if (pos === Gtk.PositionType.TOP || pos === Gtk.PositionType.BOTTOM) {
+      const edgeOffset = 20
+      popover.set_halign(useEndAlign ? Gtk.Align.END : Gtk.Align.START)
+      popover.set_pointing_to(
+        new Gdk.Rectangle({
+          x: Math.round(anchorX - edgeOffset),
+          y: 0,
+          width: edgeOffset * 2,
+          height: widgetH,
+        })
+      )
+    } else {
+      popover.set_halign(Gtk.Align.FILL)
+      popover.set_pointing_to(null)
     }
   }
 
@@ -138,6 +185,7 @@ export function attachTooltip(widget: Gtk.Widget, options: TooltipOptions): Gtk.
 
     const pos = resolvePosition(widget, options.position)
     popover.set_position(pos)
+    updateArrowAlignment(pos)
 
     popover.remove_css_class("pos-top")
     popover.remove_css_class("pos-bottom")
@@ -167,7 +215,8 @@ export function attachTooltip(widget: Gtk.Widget, options: TooltipOptions): Gtk.
   }
 
   const motion = new Gtk.EventControllerMotion()
-  motion.connect("enter", () => {
+  motion.connect("enter", (_ctrl, x) => {
+    lastMouseX = x
     cancelTimer()
     const now = GLib.get_monotonic_time() / 1000
     const isRecent = activePopover !== null || now - lastDismissedTime < 400
@@ -182,6 +231,10 @@ export function attachTooltip(widget: Gtk.Widget, options: TooltipOptions): Gtk.
         return GLib.SOURCE_REMOVE
       })
     }
+  })
+
+  motion.connect("motion", (_ctrl, x) => {
+    lastMouseX = x
   })
 
   motion.connect("leave", () => {
