@@ -374,7 +374,7 @@ function SystemInfoSegment(props: {
   return (
     <box
       class="topbar-segment segment-sysinfo"
-      spacing={6}
+      spacing={10}
       valign={Gtk.Align.CENTER}
       $={(self: Gtk.Box) => {
         const pop = new Gtk.Popover({
@@ -434,7 +434,7 @@ function SystemInfoSegment(props: {
         rebuildNotificationList()
       }}
     >
-      <box class="sysinfo-icons-row" spacing={6} valign={Gtk.Align.CENTER}>
+      <box class="sysinfo-icons-row" spacing={8} valign={Gtk.Align.CENTER}>
         <Tooltip text={netTooltip} position="bottom">
           <image class="sysinfo-icon" iconName={netIcon} pixelSize={14} />
         </Tooltip>

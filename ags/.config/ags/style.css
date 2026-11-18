@@ -391,6 +391,7 @@ popover.notif-popover > arrow {
   font-weight: var(--font-weight-mono);
   color: @color-inverse;
   letter-spacing: 0.5px;
+  padding: 0 2px;
 }
 
 .tray-items-box {
