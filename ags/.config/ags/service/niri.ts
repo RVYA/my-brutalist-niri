@@ -8,6 +8,7 @@ export interface FocusedWindow {
   title: string
   appId: string
   sizingState: WindowSizingState
+  isFloating?: boolean
 }
 
 function cleanTitle(rawTitle: string, appId: string): string {
@@ -104,6 +105,7 @@ async function updateFocusedWindow() {
         title,
         appId,
         sizingState,
+        isFloating: Boolean(data.is_floating),
       })
     }
 
@@ -187,5 +189,13 @@ export async function shrinkToQuarterWindow() {
     await execAsync(["niri", "msg", "action", "set-window-height", "50%"])
   } catch (e) {
     console.error("shrinkToQuarterWindow error:", e)
+  }
+}
+
+export async function toggleFloatWindow() {
+  try {
+    await execAsync(["niri", "msg", "action", "toggle-window-floating"])
+  } catch (e) {
+    console.error("toggleFloatWindow error:", e)
   }
 }
