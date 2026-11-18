@@ -6,6 +6,7 @@ import Gio from "gi://Gio"
 import TopBar, { testShowTopBar, testHideTopBar } from "./widget/TopBar"
 import TrayPill from "./widget/TrayPill"
 import LookAndFeel, { toggleLookAndFeel, setActiveSubmenu, openSubmenu } from "./widget/LookAndFeel"
+import { toggleMockBackgroundOverflow } from "./service/background"
 
 const style = `${GLib.getenv("HOME")}/.config/ags/style.css`
 const colors = `${GLib.getenv("HOME")}/.config/ags/style/colors.css`
@@ -22,6 +23,7 @@ function reloadCss() {
     const [, styleData] = GLib.file_get_contents(style)
     const colorsText = new TextDecoder().decode(colorsData)
     const rawStyle = new TextDecoder().decode(styleData)
+    const cleanedStyle = rawStyle.replace(/@import\s+[^;]+;/g, "")
     const match = colorsText.match(/@define-color\s+color-obverse\s+(#[0-9a-fA-F]{6});/)
     let handleColor = "#ffffff"
     if (match) {
@@ -128,9 +130,15 @@ app.start({
     } else if (cmd.includes("hide-topbar")) {
       testHideTopBar()
       res("topbar hidden")
+    } else if (cmd.includes("test-bg-overflow")) {
+      const state = toggleMockBackgroundOverflow()
+      res(`mock bg overflow: ${state}`)
     } else if (cmd.includes("quit")) {
       res("quitting")
-      app.quit()
+      GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+        app.quit()
+        return GLib.SOURCE_REMOVE
+      })
     } else {
       res("unknown command")
     }

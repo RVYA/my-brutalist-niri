@@ -15,6 +15,7 @@ button label {
 
 window.topbar-handle-window,
 window.main-topbar-window,
+window.bg-apps-window,
 window.tray-pill-window {
   background: transparent;
 }
@@ -39,6 +40,33 @@ window.modal-window-root {
 
 .modal-backdrop {
   background-color: rgba(0, 0, 0, 0.55);
+}
+
+.topbar-metaball-chain {
+  background: transparent;
+  padding: 2px 6px;
+}
+
+.topbar-segment {
+  font-family: var(--font-mono);
+  background-color: transparent;
+  border: none;
+  border-radius: 9999px;
+  padding: 5px 13px;
+  min-height: 20px;
+}
+
+.segment-connector-box {
+  padding: 0;
+  margin-left: -6px;
+  margin-right: -6px;
+  background: transparent;
+}
+
+.segment-connector-icon {
+  color: alpha(@color-obverse, 0.86);
+  min-width: 12px;
+  min-height: 28px;
 }
 
 .topbar-pill {
@@ -108,6 +136,232 @@ window.modal-window-root {
   transform: scale(0.95);
 }
 
+.btn-float {
+  margin-left: 6px;
+}
+
+.btn-float.active {
+  background-color: @color-accent;
+}
+
+.segment-icon-btn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 2px 4px;
+  color: @color-inverse;
+  opacity: 0.80;
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.segment-icon-btn:hover {
+  opacity: 1.0;
+  color: @color-accent;
+  background-color: alpha(@color-inverse, 0.12);
+}
+
+.caffeinate-btn {
+  margin-left: 4px;
+}
+
+.caffeinate-btn.active {
+  color: @color-accent;
+  opacity: 1.0;
+}
+
+.segment-inner-divider {
+  min-width: 1px;
+  min-height: 12px;
+  background-color: alpha(@color-neutral, 0.45);
+  margin: 0 2px;
+}
+
+.media-status-icon {
+  color: @color-accent;
+}
+
+.media-track-label {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sans);
+  font-weight: 600;
+  color: @color-inverse;
+}
+
+.media-controls-row {
+  margin-left: 4px;
+}
+
+.sysinfo-icon {
+  color: @color-inverse;
+  opacity: 0.85;
+}
+
+.sysinfo-icon.active-accent {
+  color: @color-accent;
+  opacity: 1.0;
+}
+
+.sysinfo-metric-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: @color-inverse;
+  margin-left: 3px;
+}
+
+.notif-trigger-btn {
+  background: transparent;
+  border: none;
+  padding: 0 2px;
+  color: @color-inverse;
+}
+
+.notif-bell-icon {
+  color: @color-inverse;
+  opacity: 0.75;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.notif-bell-icon.unread {
+  color: @color-accent;
+  opacity: 1.0;
+}
+
+.notif-trigger-btn:hover .notif-bell-icon {
+  color: @color-accent;
+  opacity: 1.0;
+}
+
+.notif-badge-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  color: @color-obverse;
+  background-color: @color-inverse;
+  border-radius: 9999px;
+  padding: 0 5px;
+  min-height: 15px;
+}
+
+.notif-preview-label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: @color-inverse;
+  opacity: 0.85;
+  margin-left: 6px;
+}
+
+popover.notif-popover {
+  background: transparent;
+  padding: 0;
+}
+
+popover.notif-popover contents,
+popover.notif-popover > contents {
+  background-color: @color-obverse;
+  border: 1px solid @color-inverse;
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 260px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.60);
+}
+
+popover.notif-popover arrow,
+popover.notif-popover > arrow {
+  background-color: @color-obverse;
+  border: 1px solid @color-inverse;
+}
+
+.notif-popover-header {
+  padding-bottom: 6px;
+  border-bottom: 1px solid alpha(@color-neutral, 0.35);
+}
+
+.notif-popover-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: @color-inverse;
+}
+
+.notif-clear-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: @color-neutral;
+  background: transparent;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.notif-clear-btn:hover {
+  color: @color-accent;
+  background-color: alpha(@color-inverse, 0.10);
+}
+
+.notif-empty-label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: @color-neutral;
+  padding: 12px 0;
+}
+
+.notif-item-row {
+  background-color: alpha(@color-neutral, 0.08);
+  border: 1px solid alpha(@color-neutral, 0.25);
+  border-radius: 6px;
+  padding: 6px 8px;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.notif-item-row:hover {
+  border-color: @color-inverse;
+  background-color: alpha(@color-inverse, 0.08);
+}
+
+.notif-item-main-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.notif-item-icon {
+  color: @color-inverse;
+}
+
+.notif-item-summary {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  color: @color-inverse;
+}
+
+.notif-item-body {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: @color-neutral;
+}
+
+.notif-item-dismiss-btn {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  color: @color-neutral;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  min-width: 20px;
+  min-height: 20px;
+}
+
+.notif-item-dismiss-btn:hover {
+  color: @color-error;
+  background-color: alpha(@color-error, 0.15);
+}
+
 .separator {
   min-width: 1px;
   min-height: 14px;
@@ -157,6 +411,65 @@ window.modal-window-root {
 .tray-icon:hover {
   opacity: 1;
   filter: grayscale(0%);
+}
+
+.bg-apps-container {
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 3px;
+  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.bg-apps-container.hovered,
+.bg-apps-container:hover {
+  background-color: alpha(@color-obverse, 0.72);
+  border-color: alpha(@color-neutral, 0.25);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.40);
+}
+
+.bg-apps-overflow-box {
+  padding-top: 2px;
+}
+
+.bg-app-bubble {
+  min-width: 14px;
+  min-height: 14px;
+  padding: 3px;
+  margin: 0;
+  border-radius: 5px;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  transition: background-color 0.12s ease;
+}
+
+.bg-app-bubble:hover {
+  background-color: alpha(@color-inverse, 0.14);
+}
+
+.bg-app-bubble:active {
+  background-color: alpha(@color-accent, 0.30);
+}
+
+.bg-app-icon {
+  color: @color-inverse;
+  opacity: 0.60;
+  filter: grayscale(100%);
+  transition: opacity 0.15s ease;
+}
+
+.bg-app-bubble:hover .bg-app-icon {
+  opacity: 1;
+}
+
+.bg-app-ellipsis-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  color: @color-inverse;
+  opacity: 0.65;
 }
 
 .modal-card-container {
@@ -1161,34 +1474,35 @@ popover.directional-tooltip {
 
 popover.directional-tooltip contents,
 popover.directional-tooltip > contents {
-  background-color: alpha(@color-obverse, 0.85);
-  border: 1px solid alpha(@color-neutral, 0.40);
+  background-color: @color-obverse;
+  border: 1px solid @color-inverse;
   border-radius: 6px;
-  padding: 4px 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  padding: 5px 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
 }
 
 popover.directional-tooltip arrow,
 popover.directional-tooltip > arrow {
-  background-color: alpha(@color-obverse, 0.85);
-  border: 1px solid alpha(@color-neutral, 0.40);
+  background-color: @color-obverse;
+  border: 1px solid @color-inverse;
 }
 
 tooltip,
 tooltip.background,
 tooltip > box {
-  background-color: alpha(@color-obverse, 0.85);
-  border: 1px solid alpha(@color-neutral, 0.40);
+  background-color: @color-obverse;
+  border: 1px solid @color-inverse;
   border-radius: 6px;
-  padding: 4px 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  padding: 5px 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
 }
 
 tooltip label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sans);
+  font-weight: var(--font-weight-sans);
+  font-style: var(--font-style-sans);
+  font-variation-settings: var(--font-variation-sans);
   color: @color-inverse;
 }
 
@@ -1197,22 +1511,22 @@ tooltip label {
 }
 
 .tooltip-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sans);
+  font-weight: var(--font-weight-sans);
+  font-style: var(--font-style-sans);
+  font-variation-settings: var(--font-variation-sans);
   color: @color-inverse;
 }
 
 .tooltip-shortcut {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  color: alpha(@color-inverse, 0.60);
-  background-color: alpha(@color-inverse, 0.12);
-  border: 1px solid alpha(@color-inverse, 0.15);
+  color: @color-obverse;
+  background-color: @color-inverse;
   border-radius: 4px;
-  padding: 1px 4px;
+  padding: 1px 5px;
   margin-left: 6px;
 }
 

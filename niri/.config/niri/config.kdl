@@ -78,7 +78,7 @@ blur {
     saturation 1.3
 }
 
-layer-rule {
+/-layer-rule {
     match namespace="^topbar$"
     geometry-corner-radius 9999
     background-effect {
