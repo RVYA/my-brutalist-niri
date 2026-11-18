@@ -12,7 +12,7 @@ export interface CollapsibleSectionProps {
 }
 
 function getArrowIcon(): Gio.Icon {
-  const path = `${GLib.getenv("HOME")}/.config/ags/assets/icons/doomscrll-arrow-right-symbolic.svg`
+  const path = `${GLib.getenv("HOME")}/.config/ags/assets/icons/arrow-right-symbolic.svg`
   return Gio.FileIcon.new(Gio.File.new_for_path(path))
 }
 

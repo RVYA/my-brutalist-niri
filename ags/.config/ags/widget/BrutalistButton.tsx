@@ -19,7 +19,7 @@ export interface BrutalistButtonProps {
 }
 
 function getArrowIcon(direction: "left" | "right"): Gio.Icon {
-  const path = `${GLib.getenv("HOME")}/.config/ags/assets/icons/doomscrll-arrow-${direction}-symbolic.svg`
+  const path = `${GLib.getenv("HOME")}/.config/ags/assets/icons/arrow-${direction}-symbolic.svg`
   return Gio.FileIcon.new(Gio.File.new_for_path(path))
 }
 
